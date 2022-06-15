@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>jq.Schedule Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../dist/css/style.min.css" />
+
+    <!-- （要削除）ログ用 -->
+    <style>
+        #logs{
+            border: solid 1px #bbb;
+            padding: 16px;
+            background: #eee;
+        }
+        #logs .table{
+            margin-bottom: 0;
+        }
+        #logs .table td,
+        #logs .table th{
+            border: none;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="container">
+    <h1 id="page_title" class="h2" style="padding-bottom: 16px">計画手修正ツール</h1>
+
+    <!-- ファイルアップロードボタン -->
+    <div style="padding: 0 0 12px;">
+        <button id="plan_upload" class="btn btn-success" style="margin-bottom: 12px; margin-right: 12px">計画表ファイルアップロード</button>
+        <button id="input_upload" class="btn btn-success" style="margin-bottom: 12px;">投入ファイルアップロード</button>
+    </div>
+    
+    <!-- 作業追加・削除ボタン -->
+    <div style="padding: 0 0 12px;">
+        <button id="add_hinsyu" class="btn btn-primary" style="margin-bottom: 12px;">品種追加</button>
+        <button id="add_sagyou" class="btn btn-primary" style="margin-bottom: 12px; margin-right: 12px">作業追加</button>
+        <button id="delete_hinsyu" class="btn btn-danger" style="margin-bottom: 12px;">品種削除</button>
+        <button id="delete_sagyou" class="btn btn-danger" style="margin-bottom: 12px;">作業削除</button>
+    </div>
+    
+    <div style="padding: 0 0 40px;">
+        <!-- ガントチャート -->
+        <div id="schedule"></div>
+
+        <!-- ログ -->
+        <div class="row">
+            <!-- タイトル -->
+            <div class="col-md-8">
+                <h3>Log</h3>
+            </div>
+            <!-- clearボタン -->
+            <div class="col-md-4 text-right">
+                <a class="btn btn-default" style="margin-top: 16px;" id="clear-logs">clear</a>
+            </div>
+        </div>
+        <!-- ログ内容 -->
+        <div style="padding: 12px 0 0;">
+            <div id="logs" class="table-responsive"></div>
+        </div>
+
+    </div>
+    
+</div>
+
+
+<script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.10.4/jquery-ui.min.js" type="text/javascript" language="javascript"></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script type="text/javascript" src="../dist/js/jquery_schedule_custom.js"></script>
+<script type="text/javascript">
+    function addLog(type, message){
+        var $log = $('<tr />');
+        $log.append($('<th />').text(type));
+        $log.append($('<td />').text(message ? JSON.stringify(message) : ''));
+        $("#logs table").prepend($log);
+    }
+    $(function(){
+        $("#logs").append('<table class="table">');
+        var isDraggable = true;
+        var isResizable = true;
+        var $sc = $("#schedule").timeSchedule({
+            startTime: "07:00", // schedule start time(HH:ii)
+            endTime: "21:00",   // schedule end time(HH:ii)
+            widthTime: 60 * 10,  // 何秒を1マスとするか
+            timeLineY: 60,       // height(px)
+            verticalScrollbar: 10,   // scrollbar (px)→縦方向のスクロールバーの右側のスペース幅？？
+            timeLineBorder: 2,   // border(top and bottom)
+            bundleMoveWidth: 6,  // width to move all schedules to the right of the clicked time line cell
+            draggable: isDraggable,
+            resizable: isResizable,
+            resizableLeft: true,
+            rows : {
+                '0' : {
+                    title : '作業者1',
+                    schedule:[
+                        {
+                            start: '09:00',
+                            end: '12:00',
+                            text: 'タスク1',
+                            data: {
+                            }
+                        },
+                        {
+                            start: '11:00',
+                            end: '13:00',
+                            text: 'タスク2',
+                            data: {
+                            }
+                        },
+                        {
+                            start: '12:30',
+                            end: '13:30',
+                            text: 'タスク3',
+                            data: {
+                            }
+                        }
+                    ]
+                },
+                '1' : {
+                    title : '作業者2',
+                    schedule:[
+                    ]
+                },
+                '2' : {
+                    title : '作業者3',
+                    schedule:[
+                        {
+                            start: '8:00',
+                            end: '9:00',
+                            text: 'タスク4',
+                            data: {
+                            }
+                        },
+                        {
+                            start: '10:00',
+                            end: '11:00',
+                            text: 'タスク5',
+                            data: {
+                            }
+                        }
+                    ]
+                },
+                '3' : {
+                    title : '作業者4',
+                    schedule:[
+                        {
+                            start: '8:00',
+                            end: '9:00',
+                            text: 'タスク6',
+                            data: {
+                            }
+                        }
+                    ]
+                },
+                '4' : {
+                    title : '作業者5',
+                    schedule:[
+                        {
+                            start: '11:00',
+                            end: '12:00',
+                            text: 'タスク7',
+                            data: {
+                            }
+                        }
+                    ]
+                },
+                '5' : {
+                    title : '作業者6',
+                    schedule:[
+                        {
+                            start: '8:00',
+                            end: '10:05',
+                            text: 'タスク8',
+                            data: {
+                            }
+                        }
+                    ]
+                },
+                '6' : {
+                    title : '作業者7',
+                    schedule:[
+                        {
+                            start: '11:00',
+                            end: '12:00',
+                            text: 'タスク9',
+                            data: {
+                            }
+                        }
+                    ]
+                },
+                '7' : {
+                    title : '作業者8',
+                    schedule:[
+                        {
+                            start: '8:00',
+                            end: '10:05',
+                            text: 'タスク10',
+                            data: {
+                            }
+                        }
+                    ]
+                },
+                '8' : {
+                    title : '作業者9',
+                    schedule:[
+                        {
+                            start: '10:00',
+                            end: '11:00',
+                            text: 'タスク11',
+                            data: {
+                            }
+                        }
+                    ]
+                }
+            },
+            onChange: function(node, data){
+                addLog('onChange', data);
+            },
+            onInitRow: function(node, data){
+                addLog('onInitRow', data);
+            },
+            onClick: function(node, data){
+                addLog('onClick', data);
+            },
+            onAppendRow: function(node, data){
+                addLog('onAppendRow', data);
+            },
+            onAppendSchedule: function(node, data){
+                addLog('onAppendSchedule', data);
+                if(data.data.class){
+                    node.addClass(data.data.class);
+                }
+                if(data.data.image){
+                    var $img = $('<div class="photo"><img></div>');
+                    $img.find('img').attr('src', data.data.image);
+                    node.prepend($img);
+                    node.addClass('sc_bar_photo');
+                }
+            },
+            onScheduleClick: function(node, time, timeline){
+                var start = time;
+                var end = $(this).timeSchedule('formatTime', $(this).timeSchedule('calcStringTime', time) + 3600);
+                $(this).timeSchedule('addSchedule', timeline, {
+                    start: start,
+                    end: end,
+                    text:'Insert Schedule',
+                    data:{
+                        class: 'sc_bar_insert'
+                    }
+                });
+                addLog('onScheduleClick', time + ' ' + timeline);
+            },
+        });
+        $('#event_timelineData').on('click', function(){
+            addLog('timelineData', $sc.timeSchedule('timelineData'));
+        });
+        $('#event_scheduleData').on('click', function(){
+            addLog('scheduleData', $sc.timeSchedule('scheduleData'));
+        });
+        $('#event_resetData').on('click', function(){
+            $sc.timeSchedule('resetData');
+            addLog('resetData');
+        });
+        $('#event_resetRowData').on('click', function(){
+            $sc.timeSchedule('resetRowData');
+            addLog('resetRowData');
+        });
+        $('#event_setDraggable').on('click', function(){
+            isDraggable = !isDraggable;
+            $sc.timeSchedule('setDraggable', isDraggable);
+            addLog('setDraggable', isDraggable ? 'enable' : 'disable');
+        });
+        $('#event_setResizable').on('click', function(){
+            isResizable = !isResizable;
+            $sc.timeSchedule('setResizable', isResizable);
+            addLog('setResizable', isResizable ? 'enable' : 'disable');
+        });
+        $('.ajax-data').on('click', function(){
+            $.ajax({url: './data/'+$(this).attr('data-target')})
+                .done( (data) => {
+                    addLog('Ajax GetData', data);
+                    $sc.timeSchedule('setRows', data);
+                });
+        });
+        $('#clear-logs').on('click', function(){
+            $('#logs .table').empty();
+        });
+    });
+</script>
+</body>
+</html>
