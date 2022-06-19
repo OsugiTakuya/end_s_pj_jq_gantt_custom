@@ -294,8 +294,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * 現在のタイムライン番号を取得
      *
      * @param node
-     * @param top
-     * @returns {number}
+     * @param top - 移動前からの相対位置
+     * @returns {number} - この戻り値は何？？（0か1しか出ない？この戻り値がどこにも使われていない？？）
      */
     _getTimeLineNumber: function _getTimeLineNumber(node, top) {
       var $this = $(this);
@@ -304,17 +304,17 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
       var num = 0;
       var n = 0;
-      var tn = Math.ceil(top / (setting.timeLineY + setting.timeLinePaddingTop + setting.timeLinePaddingBottom));
+      var tn = Math.ceil(top / (setting.timeLineY + setting.timeLinePaddingTop + setting.timeLinePaddingBottom));  // 何行分動いたか
 
       for (var i in setting.rows) {
         var r = setting.rows[i];
         var tr = 0;
 
         if (_typeof(r.schedule) === 'object') {
-          tr = r.schedule.length;
+          tr = r.schedule.length;  // i行目に何行あるか
         }
 
-        if (node && node.timeline) {
+        if (node && node.timeline) {  // どのような時に入る？？
           tr++;
         }
 
@@ -456,7 +456,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         $node.draggable({
           grid: [setting.widthTimeX, 1],  // グリッドに沿って移動
           containment: $this.find('.sc_main'),  // 移動範囲
+          // containment: $this.find('.sc_draggable_wrapper'),  // 移動範囲
           helper: 'original',  // original:そのまま移動, clone:元の要素を残したまま移動
+          // scroll: 'false',
           start: function start(event, ui) {  // ドラッグ開始時に呼び出される関数
             var node = {};
             node.node = this;
@@ -485,15 +487,27 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var $moveNode = $(this);
             var scKey = $moveNode.data('sc_key');
             
-            // 現在のボックスの座標から行番号を取得
+            // 現在のボックスの座標から行番号を取得（→各行の行番号？？）
             var timelineNum = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
             
             // eslint-disable-next-line no-param-reassign
             ui.position.left = Math.floor(ui.position.left / setting.widthTimeX) * setting.widthTimeX;
+
+            // 縦方向のスクロールバーを削除
+            // $(".jq-schedule .sc_main_box").css({'overflow-x': 'hidden', 'overflow-y': 'hidden'});
+            // $(".jq-schedule .sc_main").css({
+            //   'overflow-y': 'hidden', 'height': 500,
+            // });
+
+            // // ボックス置き場に出たら移動
+            // if (ui.position.top > 300){
+            //   // 要素を移動
+            //   $moveNode.appendTo('.box_storage');
+            // }
             
             // 行番号がドラッグ前後で変わる場合
             if (currentNode.nowTimeline !== timelineNum) {
-              // 現在のタイムライン
+              // 現在のタイムライン（どこにも使われていない？？）
               currentNode.nowTimeline = timelineNum;
             }
 
@@ -732,8 +746,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             node.appendTo(this);
             
             // 高さ調整
-            methods._resetBarPosition.apply($this, [nowTimelineNum]);
-            methods._resetBarPosition.apply($this, [timelineNum]);
+            methods._resetBarPosition.apply($this, [nowTimelineNum]);  // TODO
+            methods._resetBarPosition.apply($this, [timelineNum]);  // TODO
+            console.log("drop", id);
           }
         });
         
@@ -777,7 +792,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * 
      * @param {Number} n - 行id（0始まりインデックス）
      */
-    _resetBarPosition: function _resetBarPosition(n) {
+    _resetBarPosition: function _resetBarPosition(n) {  // TODO: n=-1のときの処理
       return this.each(function () {
         var $this = $(this);
 
@@ -903,6 +918,19 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     },
 
     /**
+     * ガントチャート置き場の幅を調整
+     */
+    _resizeStrageWindow: function _resizeStrageWindow(){
+      return this.each(function(){
+        var $this = $(this);
+        var setting = methods._loadSettingData.apply($this);
+        var scWidth = $this.width();
+        var scMainWidth = scWidth - setting.dataWidth - setting.verticalScrollbar - 15;  // ガントチャート表示部の幅
+        $this.find('.box_storage').width(scMainWidth);
+      });
+    },
+
+    /**
      * move all cells of the right of the specified time line cell
      *
      * @param timeline
@@ -979,6 +1007,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           verticalScrollbar: 0,
           // vertical scrollbar width
           bundleMoveWidth: 1,
+          // box storage
+          boxStrageY: 100,
           // width to move all schedules to the right of the clicked time cell
           draggable: true,
           resizable: true,
@@ -1023,10 +1053,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           '</div>';
         $this.append(html);   // $this==$("#schedule")
         $this.addClass(config.className);
+        // 作業者名、時刻ラベルのスクロール設定
         $this.find('.sc_main_box').on('scroll', function () {
           $this.find('.sc_data_scroll').css('top', $(this).scrollTop() * -1);
           $this.find('.sc_header_scroll').css('left', $(this).scrollLeft() * -1);
-        }); // add time cell
+        });
+        // add time cell
         // var cellNum = Math.floor((tableEndTime - tableStartTime) / config.widthTime);
 
         var beforeTime = -1;
@@ -1054,6 +1086,29 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         for (var i in config.rows) {
           methods._addRow.apply($this, [i, config.rows[i]]);
         }
+
+        // ガントチャート置き場
+        $(".sc_main_box").wrap($('<div class="sc_draggable_wrapper"></div>'));  // 親要素追加
+        var $box_storage = $('<div class="box_storage"></div>');
+        $(".sc_draggable_wrapper").append($box_storage);  // ガントチャート置き場追加
+        // ガントチャート置き場の高さ設定
+        var $storage = $this.find('.box_storage');
+        $storage.css({
+          height: config.boxStrageY,
+        });
+        // ガントチャート置き場の幅を調整
+        $(window).on('resize', function(){
+          methods._resizeStrageWindow.apply($this);
+        }).trigger('resize');
+        
+        // // ガントチャート上にボックスを置いたときの処理
+        // $this.find('.box_storage').droppable({
+        //   accept: '.sc_bar',
+        //   drop: function drop(ev, ui) {
+        //     console.log('drooop!!');
+        //     return false;
+        //   }
+        // });
       });
     }
   };

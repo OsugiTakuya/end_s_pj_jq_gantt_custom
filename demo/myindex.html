@@ -7,7 +7,7 @@
 
     <link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="../dist/css/style.min.css" />
+    <link rel="stylesheet" type="text/css" href="../dist/css/style.css" />
 
     <!-- （要削除）ログ用 -->
     <style>
@@ -94,9 +94,10 @@
             endTime: "21:00",   // schedule end time(HH:ii)
             widthTime: 60 * 10,  // 何秒を1マスとするか
             timeLineY: 60,       // height(px)
-            verticalScrollbar: 10,   // scrollbar (px)→縦方向のスクロールバーの右側のスペース幅？？
+            verticalScrollbar: 0,   // scrollbar (px)→縦方向のスクロールバーの右側のスペース幅？？
             timeLineBorder: 2,   // border(top and bottom)
             bundleMoveWidth: 6,  // width to move all schedules to the right of the clicked time line cell
+            boxStrageY: 200,  // ガントチャート置き場の高さ
             draggable: isDraggable,
             resizable: isResizable,
             resizableLeft: true,
