@@ -1007,7 +1007,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           verticalScrollbar: 0,
           // vertical scrollbar width
           bundleMoveWidth: 1,
-          // box storage
+          // Y
+          dispScheduleY: 500,
           boxStrageY: 100,
           // width to move all schedules to the right of the clicked time cell
           draggable: true,
@@ -1051,8 +1052,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               '</div>' + '\n' +
             '</div>' + '\n' +
           '</div>';
+        
         $this.append(html);   // $this==$("#schedule")
         $this.addClass(config.className);
+        // ガントチャート表示部の高さ設定
+        $this.find('.jq-schedule .sc_data,.sc_main_box').css('maxHeight', config.dispScheduleY);
         // 作業者名、時刻ラベルのスクロール設定
         $this.find('.sc_main_box').on('scroll', function () {
           $this.find('.sc_data_scroll').css('top', $(this).scrollTop() * -1);
@@ -1076,7 +1080,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             beforeTime = t;
           }
         }
-        
+
         // ガントチャート表示部の幅を調整
         $(window).on('resize', function () {
           methods._resizeWindow.apply($this);
@@ -1094,6 +1098,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         // ガントチャート置き場の高さ設定
         var $storage = $this.find('.box_storage');
         $storage.css({
+          top: config.dispScheduleY,
           height: config.boxStrageY,
         });
         // ガントチャート置き場の幅を調整
