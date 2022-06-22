@@ -628,8 +628,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     /**
      * add rows
      *
-     * @param timeline - 行番号（.timeSchedule()の引数の'0'など）
-     * @param row - 各行の情報（.timeSchedule()の引数で与えたrowsの1つ分）
+     * @param {string} timeline - 行番号（.timeSchedule()の引数の'row0'など）
+     * @param {object} row - 各行の情報（.timeSchedule()の引数で与えたrowsの1つ分）
      */
     _addRow: function _addRow(timeline, row) {
       return this.each(function () {
@@ -670,7 +670,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           var $tl = $('<div class="tl"></div>');
           $tl.outerWidth(setting.widthTimeX);  // 時刻軸の横幅
           $tl.data('time', methods.formatTime(t));
-          $tl.data('timeline', timeline);
+          $tl.data('timeline', timeline);  // {string}
           $timeline.append($tl);
         }
         
@@ -678,6 +678,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         // left click
         $timeline.find('.tl').on('click', function () {
           if (setting.onScheduleClick) {
+            // saveData.timeline {object} 各行の情報, キーはtimeline {string}
             setting.onScheduleClick.apply(
               $this,
               [this, $(this).data('time'), $(this).data('timeline'), saveData.timeline[$(this).data('timeline')]]);
@@ -737,17 +738,23 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           accept: '.sc_bar',
           drop: function drop(ev, ui) {
             var node = ui.draggable;
-            var scKey = node.data('sc_key');
-            var nowTimelineNum = saveData.schedule[scKey].timeline;
-            var timelineNum = $this.find('.sc_main .timeline').index(this);
+            var scKey = node.data('sc_key');  // {number} 
+            /*
+            元のコード
+            saveData.schedule[{number}].timelineは初期状態では{string}, 移動したら{number}になる
+            →saveData.timelineのキーは{string}なのでこちらに合わせるべき
+            */
+            var nowTimelineKey = saveData.schedule[scKey].timeline;
+            var timelineKey = $(this).children().eq(0).data('timeline');  // dropされた行要素の各マス(tl)のdata
+            console.log(nowTimelineKey, timelineKey);
             
             // タイムラインの変更
-            saveData.schedule[scKey].timeline = timelineNum;
+            saveData.schedule[scKey].timeline = timelineKey;
             node.appendTo(this);
             
             // 高さ調整
-            methods._resetBarPosition.apply($this, [nowTimelineNum]);  // TODO
-            methods._resetBarPosition.apply($this, [timelineNum]);  // TODO
+            methods._resetBarPosition.apply($this, [nowTimelineKey]);  // TODO
+            methods._resetBarPosition.apply($this, [timelineKey]);  // TODO
             console.log("drop", id);
           }
         });
