@@ -167,6 +167,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * @returns {methods}
      */
     addSchedule: function addSchedule(timeline, data) {
+      // 引数チェック（timelineが既に存在する or -1であるか）
+      var saveData = methods._loadData.apply($(this));
+      var timeline_array = Object.keys(saveData.timeline);
+      timeline_array = timeline_array.map(k => +k)  // 整数化
+      if (!(timeline_array.includes(timeline)) || timeline==-1) {
+        throw new Error('addSchedule: timeline='+timeline+' は存在しない');
+      }
+
       return this.each(function () {
         var $this = $(this);
         var d = {
@@ -196,6 +204,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * @returns {methods}
      */
     addRow: function addRow(timeline, data) {
+      // 引数チェック（timelineが存在しないものであるか）
+      var saveData = methods._loadData.apply($(this));
+      var timeline_array = Object.keys(saveData.timeline);
+      timeline_array = timeline_array.map(k => +k)  // 整数化
+      if (timeline_array.includes(timeline) || timeline!=-1) {
+        throw new Error('addRow: timeline='+timeline+' は既に存在');
+      }
+
       return this.each(function () {
         var $this = $(this);
 
@@ -369,11 +385,16 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     /**
      * スケジュール追加
      *
-     * @param timeline - 行id（0始まりインデックス）
-     * @param {ScheduleData} d - ガントチャートの1ボックスのstart,end,data,..など
+     * @param {number} timeline - 行id（0始まりインデックス, -1ならガントチャート置き場）
+     * @param {object} d - ガントチャートの1ボックスのstart,end,data,..など
      * @returns {number}
      */
     _addScheduleData: function _addScheduleData(timeline, d) {
+      // 引数チェック
+      if (!(timeline >= -1 && Number.isInteger(timeline))) {
+        throw new Error("_addScheduleData関数の引数エラー", timeline, typeof(timeline));
+      }
+
       var data = d;
       data.startTime = data.startTime ? data.startTime : methods.calcStringTime(data.start);
       data.endTime = data.endTime ? data.endTime : methods.calcStringTime(data.end);
@@ -400,7 +421,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         var etext = methods.formatTime(data.endTime);
         
         // timeline行にボックスが既にいくつ存在するか
-        var snum = methods._getScheduleCount.apply($this, [data.timeline]);  // このtimelineは.timeScheduleのrowsの'0'など
+        var snum = methods._getScheduleCount.apply($this, [data.timeline]);
         
         // ボックスの位置
         $bar.css({
@@ -422,7 +443,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         } // $this.find('.sc_main').append($bar);
 
         // データの追加
-        var $row = $this.find('.sc_main .timeline').eq(timeline);  // このtimelineは0始まり行id
+        var $row = $this.find('.sc_main .timeline').eq(timeline);
         $row.append($bar);
 
         saveData.schedule.push(data);
@@ -628,10 +649,15 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     /**
      * add rows
      *
-     * @param timeline - 行番号（.timeSchedule()の引数の'0'など）
-     * @param row - 各行の情報（.timeSchedule()の引数で与えたrowsの1つ分）
+     * @param {Number} timeline - 行番号（0始まり昇順。-1は許さない）
+     * @param  {object} row - 各行の情報（.timeSchedule()の引数で与えたrowsの1つ分）
      */
     _addRow: function _addRow(timeline, row) {
+      // 引数チェック
+      if (!(timeline >= 0 && Number.isInteger(timeline))) {
+        throw new Error("_addRow関数の引数エラー", timeline, typeof(timeline));
+      }
+
       return this.each(function () {
         var $this = $(this);
 
@@ -639,7 +665,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         var saveData = methods._loadData.apply($this);
 
-        // 今から作成する行id = 作成済みの行数（$("#...").eq(id)で要素を取得するため）
+        // 今から作成する行id = 作成済みの行数（$("#...").eq(id)で要素を取得するため。rowsのキーと同じになる）
         var id = $this.find('.sc_main .timeline').length;
         
         var html;
@@ -746,8 +772,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             node.appendTo(this);
             
             // 高さ調整
-            methods._resetBarPosition.apply($this, [nowTimelineNum]);  // TODO
-            methods._resetBarPosition.apply($this, [timelineNum]);  // TODO
+            methods._resetBarPosition.apply($this, [nowTimelineNum]);
+            methods._resetBarPosition.apply($this, [timelineNum]);
             console.log("drop", id);
           }
         });
@@ -859,7 +885,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             check[h] = [];
           }
 
-          // このボックスの高さを設定
+          // このボックスの高さを設定（各行の上端を0とした座標）
           $e1.css({
             top: h * setting.timeLineY + setting.timeLinePaddingTop
           });
@@ -875,6 +901,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
     /**
      *
+     * ある行の高さを調整する
+     * 
      * @param n
      * @param height
      */
@@ -1022,6 +1050,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           onScheduleClick: null
         }, options);
 
+        // rowsが0始まり連番かチェック
+        var l_max = Object.keys(config.rows).length;
+        for (var l = 0; l < l_max; l++) {
+          if (!(l in config.rows)) {
+            throw new Error("rowsのキーが0始まり連番でない");
+          }
+        }
+
         methods._saveSettingData.apply($this, [config]);
 
         var tableStartTime = methods.calcStringTime(config.startTime);
@@ -1084,6 +1120,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         // 各行の描画（行ごとにボックス作成）
         for (var i in config.rows) {
+          // objectのkeyはJSの仕様でstringになるため、intに変換
+          i = parseInt(i, 10);
           methods._addRow.apply($this, [i, config.rows[i]]);
         }
 
