@@ -495,20 +495,28 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         $node.draggable({
           grid: [setting.widthTimeX, 1],  // グリッドに沿って移動
-          containment: $this.find('.sc_main'),  // 移動範囲
-          // containment: $this.find('.sc_draggable_wrapper'),  // 移動範囲
+          // containment: $this.find('.sc_main'),  // 移動範囲 →全ボックス描画後に設定
           helper: 'original',  // original:そのまま移動, clone:元の要素を残したまま移動
           // scroll: 'false',
           start: function start(event, ui) {  // ドラッグ開始時に呼び出される関数
             var node = {};
             node.node = this;
-            node.offsetTop = ui.position.top;
-            node.offsetLeft = ui.position.left;
-            node.currentTop = ui.position.top;
-            node.currentLeft = ui.position.left;
+            // node.offsetTop = ui.position.top;
+            // node.offsetLeft = ui.position.left;
+            // node.currentTop = ui.position.top;
+            // node.currentLeft = ui.position.left;
+            // ボックス初期位置とガントチャート表示部（スクロールの非表示部含む）原点とのマージン
+            node.draggableLeft = $(".sc_draggable_wrapper").offset().left;
+            node.draggableTop = $(".sc_draggable_wrapper").offset().top;
             node.timeline = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
             node.nowTimeline = node.timeline;
             currentNode = node;
+
+            // 要素を「ガントチャート表示部+ガントチャート置き場」の要素に移動
+            // (droppableにより各要素に配置される)
+            $(this).appendTo('.sc_draggable_wrapper');
+
+            console.log('---');
           },
 
           /**
@@ -530,52 +538,61 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             // 現在のボックスの座標から行番号を取得（→各行の行番号？？）
             var timelineNum = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
             
-            // eslint-disable-next-line no-param-reassign
-            ui.position.left = Math.floor(ui.position.left / setting.widthTimeX) * setting.widthTimeX;
-
-            // 縦方向のスクロールバーを削除
-            // $(".jq-schedule .sc_main_box").css({'overflow-x': 'hidden', 'overflow-y': 'hidden'});
-            // $(".jq-schedule .sc_main").css({
-            //   'overflow-y': 'hidden', 'height': 500,
-            // });
-
-            // // ボックス置き場に出たら移動
-            // if (ui.position.top > 300){
-            //   // 要素を移動
-            //   $moveNode.appendTo('.box_storage');
-            // }
+            // ドラッグ中のボックス位置
+            // ui.position.left = Math.floor(ui.position.left / setting.widthTimeX) * setting.widthTimeX;
             
             // 行番号がドラッグ前後で変わる場合
             if (currentNode.nowTimeline !== timelineNum) {
               // 現在のタイムライン（どこにも使われていない？？）
               currentNode.nowTimeline = timelineNum;
             }
-
+            
+            // ボックスの座標変換前に保持
             currentNode.currentTop = ui.position.top;
             currentNode.currentLeft = ui.position.left;
-            
+
+            // ドラッグ中のボックス位置調整
+            // ※ドラッグ開始前：ガントチャート表示部の左上（非表示部含む）が原点
+            // ※ドラッグ中：ドラッグ可能領域（ガントチャート表示部の見えている部分）の左上が原点
+            ui.position.left = ui.offset.left - currentNode.draggableLeft;
+            ui.position.top = ui.offset.top - currentNode.draggableTop;
+
             // テキスト変更（時刻とか）
             methods._rewriteBarText.apply($this, [$moveNode, saveData.schedule[scKey]]);
 
+            console.log([currentNode.currentTop, currentNode.currentLeft], ui.position, $(this).offset());
             return true;
           },
 
           // 要素の移動が終った後の処理
-          stop: function stop() {
-            $(this).data('dragCheck', false);
-            currentNode = null;
+          stop: function stop(event, ui) {
             var $n = $(this);
             var scKey = $n.data('sc_key');
-            var x = $n.position().left; // var w = $n.width();
 
-            // 移動終了時の座標をグリッドに合わせて取得
-            var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
-            var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
+            // 移動後のボックス位置に応じて親要素を変更
+            var storage_border = $(".box_storage").offset().top - currentNode.draggableTop;
+            if (ui.position.top < storage_border) {
+              console.log('main...', ui.position, $(this).offset());
+              $(this).appendTo('.sc_main');
+              // 移動終了時の座標をグリッドに合わせて取得
+              var x = $n.position().left;
+              // var x = currentNode.currentLeft;
+              var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
+              var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
+
+            } else {
+              console.log('storage!!', ui.position.left, ui.position.top);
+              $(this).appendTo('.box_storage');
+              // 移動終了時の座標を取得
+            }
 
             saveData.schedule[scKey].start = methods.formatTime(start);
             saveData.schedule[scKey].end = methods.formatTime(end);
             saveData.schedule[scKey].startTime = start;
             saveData.schedule[scKey].endTime = end;
+
+            $(this).data('dragCheck', false);
+            currentNode = null;
             
             // コールバックがセットされていたら呼出
             if (setting.onChange) {
@@ -641,6 +658,28 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         return key;
       });
+    },
+
+    /**
+     * ガントチャートボックスのドラッグ可能範囲を設定
+     * @param {jQuery} $node - ドラッグ可能要素（ボックス）
+     * @returns 
+     */
+    _setDraggableContainment: function _setDraggableContainment($node) {
+      var draggable_parent = $(".sc_draggable_wrapper");
+      var draggable_offset = draggable_parent.offset();
+      var draggable_height = draggable_parent.height();
+      var draggable_width = draggable_parent.width();
+      $node.draggable("option", "containment", [
+        draggable_offset['left'], draggable_offset['top'],
+        draggable_offset['left'] + draggable_width, //- $node.width(),
+        draggable_offset['top'] + draggable_height - $node.height(),
+      ]);
+      console.log([
+        draggable_offset['left'], draggable_offset['top'],
+        draggable_offset['left'] + draggable_width, //- $node.width(),
+        draggable_offset['top'] + draggable_height - $node.height(),
+      ])
     },
 
     /**
@@ -1121,7 +1160,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         $this.append(html);   // $this==$("#schedule")
         $this.addClass(config.className);
         // ガントチャート表示部の高さ設定
-        $this.find('.jq-schedule .sc_data,.sc_main_box').css('maxHeight', config.dispScheduleY);
+        $this.find('.jq-schedule .sc_data,.sc_main_box').css('height', config.dispScheduleY);
         // 作業者名、時刻ラベルのスクロール設定
         $this.find('.sc_main_box').on('scroll', function () {
           $this.find('.sc_data_scroll').css('top', $(this).scrollTop() * -1);
@@ -1193,6 +1232,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             return false;
           }
         });
+
+        // ガントチャートボックスのドラッグ可能範囲の設定
+        $(window).on('resize', function () {
+          $(".sc_bar").each(function(index, element){
+            methods._setDraggableContainment.apply($(this), [$(this)]);
+          })
+        }).trigger('resize');
       });
     }
   };

@@ -148,9 +148,10 @@
 
 .jq-schedule .sc_draggable_wrapper {
   float: left;
+  position: relative;
   width: fit-content;
   height: 700px;
-  z-index: 8;
+  /* z-index: 8; */
 }
 .jq-schedule .box_storage {
   position: relative;
