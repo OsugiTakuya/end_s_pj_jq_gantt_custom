@@ -406,7 +406,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         var setting = methods._loadSettingData.apply($this);
 
         var saveData = methods._loadData.apply($this);
-        
+
         var st = Math.ceil((data.startTime - saveData.tableStartTime) / setting.widthTime);  // 全体の開始時刻～ボックスの開始時刻が何マス分か
         var et = Math.floor((data.endTime - saveData.tableStartTime) / setting.widthTime);
         // ガントチャートのボックス1つ分
@@ -419,20 +419,39 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           </div>');
         var stext = methods.formatTime(data.startTime);
         var etext = methods.formatTime(data.endTime);
-        
-        // timeline行にボックスが既にいくつ存在するか
-        var snum = methods._getScheduleCount.apply($this, [data.timeline]);
-        
-        // ボックスの位置
-        $bar.css({
-          left: st * setting.widthTimeX,
-          top: snum * setting.timeLineY + setting.timeLinePaddingTop,
-          width: (et - st) * setting.widthTimeX,
-          height: setting.timeLineY
-        });
 
-        // ボックスに表示する時刻テキスト
-        $bar.find('.time').text(stext + '-' + etext);
+        // ボックスが時刻軸上の時の初期設定
+        if (timeline != -1) {
+          // timeline行にボックスが既にいくつ存在するか
+          var snum = methods._getScheduleCount.apply($this, [data.timeline]);
+          
+          // ボックスの位置
+          $bar.css({
+            left: st * setting.widthTimeX,
+            top: snum * setting.timeLineY + setting.timeLinePaddingTop,
+            width: (et - st) * setting.widthTimeX,
+            height: setting.timeLineY
+          });
+
+          // ボックスに表示する時刻テキスト
+          $bar.find('.time').text(stext + '-' + etext);
+        
+        // ボックスがガントチャート置き場上の時の初期設定
+        } else {
+          // ガントチャート置き場にすでにいくつ存在するか
+          var snum = methods._getScheduleCount.apply($this, [data.timeline]);
+          // ボックスの位置（ガントチャート置き場上で重複が少なくなるよう）
+          $bar.css({
+            left: st * setting.widthTimeX,
+            top: snum * setting.timeLineY + setting.timeLinePaddingTop,
+            width: (et - st) * setting.widthTimeX,
+            height: setting.timeLineY
+          });
+
+          // ボックスに表示する時刻テキスト
+          $bar.find('.time').text('xx:xx-xx:xx');
+        }
+        
         // ボックスに表示するテキスト
         if (data.text) {
           $bar.find('.text').text(data.text);
@@ -440,7 +459,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         if (data.class) {
           $bar.addClass(data.class);
-        } // $this.find('.sc_main').append($bar);
+        }
 
         // データの追加
         var $row = $this.find('.sc_main .timeline').eq(timeline);
@@ -625,9 +644,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     },
 
     /**
-     * スケジュール数の取得
+     * スケジュール数の取得（ガントチャート置き場上の数もこの関数で処理）
      *
-     * @param {number} n row number
+     * @param {number}
      * @returns {number}
      */
     _getScheduleCount: function _getScheduleCount(n) {
@@ -816,86 +835,96 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     /**
      * ガントチャートの座標を再設定（重複するなら段数増やすなど）
      * 
-     * @param {Number} n - 行id（0始まりインデックス）
+     * @param {Number} n - 行id（0始まりインデックス. -1ならガントチャート置き場）
      */
-    _resetBarPosition: function _resetBarPosition(n) {  // TODO: n=-1のときの処理
+    _resetBarPosition: function _resetBarPosition(n) {
       return this.each(function () {
-        var $this = $(this);
+        var $this = $(this);  // div#schedule
 
         var setting = methods._loadSettingData.apply($this); // 要素の並び替え
+        
+        // ボックスを時刻軸に置いたときの処理
+        if (n != -1) {
+          // n番目の行にあるボックスリスト
+          var $barList = $this.find('.sc_main .timeline').eq(n).find('.sc_bar');
+          var codes = [],
+              check = [];  // check[h][j]; h段目の中でj番目のボックスid（codes=init時につけたid）
+          var h = 0;
+          var $e1, $e2;
+          var c1, c2, s1, s2, e1, e2;
+          var i;
 
-        // n番目の行にあるボックスリスト
-        var $barList = $this.find('.sc_main .timeline').eq(n).find('.sc_bar');
-        var codes = [],
-            check = [];  // check[h][j]; h段目の中でj番目のボックスid（code=init時につけたid）
-        var h = 0;
-        var $e1, $e2;
-        var c1, c2, s1, s2, e1, e2;
-        var i;
-
-        for (i = 0; i < $barList.length; i++) {
-          codes[i] = {
-            code: i,
-            x: $($barList[i]).position().left
-          };
-        }
-
-        // 時刻が早い順にソート
-        codes.sort(function (a, b) {
-          if (a.x < b.x) {
-            return -1;
+          for (i = 0; i < $barList.length; i++) {
+            codes[i] = {
+              code: i,
+              x: $($barList[i]).position().left
+            };
           }
-          if (a.x > b.x) {
-            return 1;
-          }
-          return 0;
-        });
 
-        // 開始時刻が早いボックスからループ
-        for (i = 0; i < codes.length; i++) {
-          c1 = codes[i].code;  // init時につけられたボックスid
-          $e1 = $($barList[c1]);
-          
-          // h=0段目から順にボックス間が重複しない段数hを探す
-          for (h = 0; h < check.length; h++) {
-            var next = false;  // 時刻が重複する場合true
+          // 時刻が早い順にソート
+          codes.sort(function (a, b) {
+            if (a.x < b.x) {
+              return -1;
+            }
+            if (a.x > b.x) {
+              return 1;
+            }
+            return 0;
+          });
 
-            // h段目に既に配置されているボックスjに対しループ
-            for (var j = 0; j < check[h].length; j++) {
-              c2 = check[h][j];
-              $e2 = $($barList[c2]);
-              s1 = $e1.position().left;
-              e1 = $e1.position().left + $e1.outerWidth();
-              s2 = $e2.position().left;
-              e2 = $e2.position().left + $e2.outerWidth();
+          // 開始時刻が早いボックスからループ
+          for (i = 0; i < codes.length; i++) {
+            c1 = codes[i].code;  // init時につけられたボックスid
+            $e1 = $($barList[c1]);
+            
+            // h=0段目から順にボックス間が重複しない段数hを探す
+            for (h = 0; h < check.length; h++) {
+              var next = false;  // 時刻が重複する場合true
 
-              if (s1 < e2 && e1 > s2) {
-                next = true;
-                continue;
+              // h段目に既に配置されているボックスjに対しループ
+              for (var j = 0; j < check[h].length; j++) {
+                c2 = check[h][j];
+                $e2 = $($barList[c2]);
+                s1 = $e1.position().left;
+                e1 = $e1.position().left + $e1.outerWidth();
+                s2 = $e2.position().left;
+                e2 = $e2.position().left + $e2.outerWidth();
+
+                if (s1 < e2 && e1 > s2) {
+                  next = true;
+                  continue;
+                }
+              }
+
+              if (!next) {
+                break;
               }
             }
 
-            if (!next) {
-              break;
+            // h段目にボックスが存在しなければ追加
+            if (!check[h]) {
+              check[h] = [];
             }
+
+            // このボックスの高さを設定（各行の上端を0とした座標）
+            $e1.css({
+              top: h * setting.timeLineY + setting.timeLinePaddingTop
+            });
+            
+            // h段目の中でj番目のボックスidを格納
+            check[h][check[h].length] = c1;
           }
 
-          // h段目にボックスが存在しなければ追加
-          if (!check[h]) {
-            check[h] = [];
-          }
-
-          // このボックスの高さを設定（各行の上端を0とした座標）
-          $e1.css({
-            top: h * setting.timeLineY + setting.timeLinePaddingTop
-          });
-          
-          // h段目の中でj番目のボックスidを格納
-          check[h][check[h].length] = c1;
-        }
+          // 高さの調整
+          methods._resizeRow.apply($this, [n, check.length]);
         
-        // 高さの調整
-        methods._resizeRow.apply($this, [n, check.length]);
+        // ガントチャート置き場に置いたときの処理
+        } else {
+          // // このボックスの高さを設定
+          // $e1.css({
+          //   top: h * setting.timeLineY + setting.timeLinePaddingTop
+          // });
+        }
       });
     },
 
@@ -1035,7 +1064,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           verticalScrollbar: 0,
           // vertical scrollbar width
           bundleMoveWidth: 1,
-          // box storage
+          // Y
+          dispScheduleY: 500,
           boxStrageY: 100,
           // width to move all schedules to the right of the clicked time cell
           draggable: true,
@@ -1087,15 +1117,16 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               '</div>' + '\n' +
             '</div>' + '\n' +
           '</div>';
+        
         $this.append(html);   // $this==$("#schedule")
         $this.addClass(config.className);
+        // ガントチャート表示部の高さ設定
+        $this.find('.jq-schedule .sc_data,.sc_main_box').css('maxHeight', config.dispScheduleY);
         // 作業者名、時刻ラベルのスクロール設定
         $this.find('.sc_main_box').on('scroll', function () {
           $this.find('.sc_data_scroll').css('top', $(this).scrollTop() * -1);
           $this.find('.sc_header_scroll').css('left', $(this).scrollLeft() * -1);
         });
-        // add time cell
-        // var cellNum = Math.floor((tableEndTime - tableStartTime) / config.widthTime);
 
         var beforeTime = -1;
 
@@ -1112,7 +1143,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             beforeTime = t;
           }
         }
-        
+
         // ガントチャート表示部の幅を調整
         $(window).on('resize', function () {
           methods._resizeWindow.apply($this);
@@ -1132,6 +1163,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         // ガントチャート置き場の高さ設定
         var $storage = $this.find('.box_storage');
         $storage.css({
+          top: config.dispScheduleY,
           height: config.boxStrageY,
         });
         // ガントチャート置き場の幅を調整
@@ -1139,14 +1171,28 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           methods._resizeStrageWindow.apply($this);
         }).trigger('resize');
         
-        // // ガントチャート上にボックスを置いたときの処理
-        // $this.find('.box_storage').droppable({
-        //   accept: '.sc_bar',
-        //   drop: function drop(ev, ui) {
-        //     console.log('drooop!!');
-        //     return false;
-        //   }
-        // });
+        // ガントチャート置き場にボックスを置いたときの処理
+        var saveData = methods._loadData.apply($this);
+        $this.find('.box_storage').droppable({
+          accept: '.sc_bar',
+          drop: function drop(ev, ui) {
+            var node = ui.draggable;
+            var scKey = node.data('sc_key');
+            var nowTimelineNum = saveData.schedule[scKey].timeline;
+            var timelineNum = -1
+            
+            // ボックスのタイムライン、時刻等の変更
+            saveData.schedule[scKey].timeline = -1;  // どこに反映される？
+            node.appendTo(this);
+
+            // 高さ調整
+            methods._resetBarPosition.apply($this, [nowTimelineNum]);
+            methods._resetBarPosition.apply($this, [timelineNum]);
+            console.log("drop", -1);
+
+            return false;
+          }
+        });
       });
     }
   };
