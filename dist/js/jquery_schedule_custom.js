@@ -501,13 +501,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           start: function start(event, ui) {  // ドラッグ開始時に呼び出される関数
             var node = {};
             node.node = this;
-            // node.offsetTop = ui.position.top;
-            // node.offsetLeft = ui.position.left;
-            // node.currentTop = ui.position.top;
-            // node.currentLeft = ui.position.left;
+
             // ボックス初期位置とガントチャート表示部（スクロールの非表示部含む）原点とのマージン
             node.draggableLeft = $(".sc_draggable_wrapper").offset().left;
             node.draggableTop = $(".sc_draggable_wrapper").offset().top;
+
+            // TODO: 必要？？初期状態での親ノードを保持
+            $(this).data('initParentNode', $(this).parent());
             
             node.timeline = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
             node.nowTimeline = node.timeline;
@@ -518,7 +518,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             $(this).appendTo('.sc_draggable_wrapper');
             
             // 座標変換後の初期座標を格納
-            $(this).data("initTop", ui.position.top);
+            // $(this).data("initTop", ui.position.top);
             // $(this).data("initTop", ui.offset.top - currentNode.draggableTop);
           },
 
@@ -551,18 +551,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             }
             
             // ボックスの座標変換前に保持
-            currentNode.currentTop = ui.position.top;
-            currentNode.currentLeft = ui.position.left;
+            // currentNode.currentTop = ui.position.top;
+            // currentNode.currentLeft = ui.position.left;
 
-            // ドラッグ中のボックス位置調整
+            // ドラッグ中ボックスの親要素を変更したことによる座標変換
             // ※ドラッグ開始前：ガントチャート表示部の左上（非表示部含む）が原点
             // ※ドラッグ中：ドラッグ可能領域（ガントチャート表示部の見えている部分）の左上が原点
-            console.log('befor', ui.position);
-            $moveNode.data('currentPositionLeft', ui.position.left);  // 座標変換前の座標を保持
-            $moveNode.data('currentPositionTop', ui.position.top);
+            // console.log('befor', ui.position);
+            // $moveNode.data('currentPositionLeft', ui.position.left);  // 座標変換前の座標を保持
+            // $moveNode.data('currentPositionTop', ui.position.top);
             ui.position.left = ui.offset.left - currentNode.draggableLeft;
             ui.position.top = ui.offset.top - currentNode.draggableTop;
-            console.log('after', ui.position);
+            // console.log('after', ui.position);
 
             // テキスト変更（時刻とか）
             // TODO: この関数を使う前に座標系をもとに戻す等したい
@@ -597,6 +597,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
               var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
             }
+
+            // ※追加したデータを削除する！！
+            $n.removeData("initParentNode");
 
             saveData.schedule[scKey].start = methods.formatTime(start);
             saveData.schedule[scKey].end = methods.formatTime(end);
@@ -839,14 +842,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             /*
             topは合っている。
             box_storageから移動してきた場合は、スクロール部の非表示部の幅を加算
+
+            ui.positionには、座標変換後の座標が入っている
             */
-            var nodeLeft = node.data('currentPositionLeft');
-            // TODO: initTopが座標変換後の座標ではない？？
-            console.log('initTop', node.data("initTop"), 'main_box_height', $(".sc_main_box").height());
-            if (node.data("initTop") >= $(".sc_main_box").height()) {
-              nodeLeft = nodeLeft + $(".sc_main_box").scrollLeft();
-            }
-            node.css({'left': nodeLeft});  
+            node.css({'left': ui.position.left + $(".sc_main_box").scrollLeft()});  
+            
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = $this.find('.sc_main .timeline').index(this);
             
@@ -1251,9 +1251,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             */
            // 下記、ガントチャート表示部の上端を原点とする座標
             var boxStorageTop = $(".sc_main_box").height();
-            var boxTop = ui.position.top;
-            console.log('boxTop', boxTop, 'boxStrageTop', boxStorageTop);
-            node.css({'top': boxTop - boxStorageTop});
+            node.css({'top': ui.position.top - boxStorageTop});
 
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = -1
