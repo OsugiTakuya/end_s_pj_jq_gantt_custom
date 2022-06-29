@@ -508,15 +508,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             // ボックス初期位置とガントチャート表示部（スクロールの非表示部含む）原点とのマージン
             node.draggableLeft = $(".sc_draggable_wrapper").offset().left;
             node.draggableTop = $(".sc_draggable_wrapper").offset().top;
+            
             node.timeline = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
             node.nowTimeline = node.timeline;
             currentNode = node;
 
             // 要素を「ガントチャート表示部+ガントチャート置き場」の要素に移動
-            // (droppableにより各要素に配置される)
+            // (これによりui.positionの座標系が変化。ガントチャート表示部の上端、左端が原点に)
             $(this).appendTo('.sc_draggable_wrapper');
-
-            console.log('---');
+            
+            // 座標変換後の初期座標を格納
+            $(this).data("initTop", ui.position.top);
+            // $(this).data("initTop", ui.offset.top - currentNode.draggableTop);
           },
 
           /**
@@ -554,17 +557,22 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             // ドラッグ中のボックス位置調整
             // ※ドラッグ開始前：ガントチャート表示部の左上（非表示部含む）が原点
             // ※ドラッグ中：ドラッグ可能領域（ガントチャート表示部の見えている部分）の左上が原点
+            console.log('befor', ui.position);
+            $moveNode.data('currentPositionLeft', ui.position.left);  // 座標変換前の座標を保持
+            $moveNode.data('currentPositionTop', ui.position.top);
             ui.position.left = ui.offset.left - currentNode.draggableLeft;
             ui.position.top = ui.offset.top - currentNode.draggableTop;
+            console.log('after', ui.position);
 
             // テキスト変更（時刻とか）
+            // TODO: この関数を使う前に座標系をもとに戻す等したい
             methods._rewriteBarText.apply($this, [$moveNode, saveData.schedule[scKey]]);
 
-            console.log([currentNode.currentTop, currentNode.currentLeft], ui.position, $(this).offset());
+            // console.log([currentNode.currentTop, currentNode.currentLeft], ui.position, $(this).offset());
             return true;
           },
 
-          // 要素の移動が終った後の処理
+          // 要素の移動が終った後の処理（droppableの後に実行）
           stop: function stop(event, ui) {
             var $n = $(this);
             var scKey = $n.data('sc_key');
@@ -572,8 +580,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             // 移動後のボックス位置に応じて親要素を変更
             var storage_border = $(".box_storage").offset().top - currentNode.draggableTop;
             if (ui.position.top < storage_border) {
-              console.log('main...', ui.position, $(this).offset());
-              $(this).appendTo('.sc_main');
+              console.log('main!!', ui.position);
+              // $(this).appendTo('.sc_main');  // 座標系おかしくなる
               // 移動終了時の座標をグリッドに合わせて取得
               var x = $n.position().left;
               // var x = currentNode.currentLeft;
@@ -581,9 +589,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
 
             } else {
-              console.log('storage!!', ui.position.left, ui.position.top);
-              $(this).appendTo('.box_storage');
+              console.log('storage!!', ui.position);
+              // $(this).appendTo('.box_storage');
               // 移動終了時の座標を取得
+              var x = $n.position().left;
+              // var x = currentNode.currentLeft;
+              var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
+              var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
             }
 
             saveData.schedule[scKey].start = methods.formatTime(start);
@@ -672,7 +684,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       var draggable_width = draggable_parent.width();
       $node.draggable("option", "containment", [
         draggable_offset['left'], draggable_offset['top'],
-        draggable_offset['left'] + draggable_width, //- $node.width(),
+        draggable_offset['left'] + draggable_width - $node.width() + 50, // 右側に突き抜けて良い量
         draggable_offset['top'] + draggable_height - $node.height(),
       ]);
       console.log([
@@ -820,19 +832,31 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         $this.find('.sc_main .timeline').eq(id).droppable({
           accept: '.sc_bar',
           drop: function drop(ev, ui) {
-            var node = ui.draggable;
+            var node = ui.draggable;  // $(.sc_bar)
             var scKey = node.data('sc_key');
+
+            // x座標を補正
+            /*
+            topは合っている。
+            box_storageから移動してきた場合は、スクロール部の非表示部の幅を加算
+            */
+            var nodeLeft = node.data('currentPositionLeft');
+            // TODO: initTopが座標変換後の座標ではない？？
+            console.log('initTop', node.data("initTop"), 'main_box_height', $(".sc_main_box").height());
+            if (node.data("initTop") >= $(".sc_main_box").height()) {
+              nodeLeft = nodeLeft + $(".sc_main_box").scrollLeft();
+            }
+            node.css({'left': nodeLeft});  
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = $this.find('.sc_main .timeline').index(this);
             
             // タイムラインの変更
             saveData.schedule[scKey].timeline = timelineNum;
-            node.appendTo(this);
+            node.appendTo(this);  // div.timeline[id]
             
             // 高さ調整
             methods._resetBarPosition.apply($this, [nowTimelineNum]);
             methods._resetBarPosition.apply($this, [timelineNum]);
-            console.log("drop", id);
           }
         });
         
@@ -1215,20 +1239,43 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         $this.find('.box_storage').droppable({
           accept: '.sc_bar',
           drop: function drop(ev, ui) {
-            var node = ui.draggable;
+            var node = ui.draggable;  // $(.sc_bar)
             var scKey = node.data('sc_key');
+
+            // y座標を補正
+            /*
+            ・leftは合っている。
+            ・座標系は、
+            　・timelineからドラッグした場合は、そのtimelineの上端が原点
+            　・box_storageからドラッグした場合は、box_storage上端が原点
+            */
+           // 下記、ガントチャート表示部の上端を原点とする座標
+            var boxStorageTop = $(".sc_main_box").height();
+            var boxTop = ui.position.top;
+            console.log('boxTop', boxTop, 'boxStrageTop', boxStorageTop);
+            node.css({'top': boxTop - boxStorageTop});
+
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = -1
             
             // ボックスのタイムライン、時刻等の変更
             saveData.schedule[scKey].timeline = -1;  // どこに反映される？
-            node.appendTo(this);
+            node.appendTo(this);  // div.box_storage
 
             // 高さ調整
             methods._resetBarPosition.apply($this, [nowTimelineNum]);
             methods._resetBarPosition.apply($this, [timelineNum]);
-            console.log("drop", -1);
 
+            /*
+            ※注意
+            ボックス置き場のz-indexはガントチャート表示より大きいが、
+            下記コードでpropergationが止まらない。
+            これはjQueryの仕様で、先に設定したdroppableが先に判定されるそう。
+            今回は、ボックス置き場に置いたら、
+            　1.ガントチャート表示部のある行にdrop判定 → 該当timelineへnode追加、高さ調整
+            　2.ボックス置き場にドロップ判定 → 当要素にnode追加、高さ調整
+            となるため、悪影響な無いはず。
+            */
             return false;
           }
         });
