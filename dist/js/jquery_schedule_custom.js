@@ -4,6 +4,7 @@
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 
+// メイン関数
 (function ($) {
   'use strict';
 
@@ -577,11 +578,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var $n = $(this);
             var scKey = $n.data('sc_key');
 
-            // 移動後のボックス位置に応じて親要素を変更
-            var storage_border = $(".box_storage").offset().top - currentNode.draggableTop;
-            if (ui.position.top < storage_border) {
-              console.log('main!!', ui.position);
-              // $(this).appendTo('.sc_main');  // 座標系おかしくなる
+            // 移動後のボックスの開始、終了時刻
+            // var storage_border = $(".box_storage").offset().top - currentNode.draggableTop;
+            // if (ui.position.top < storage_border) {
+            if (!($n.data('initParentNode').hasClass('box_storage'))) {
+              console.log('from main!!', ui.position, $n.position());
+              // $(this).appendTo('.sc_main');  // 親要素変更すると座標系おかしくなる
               // 移動終了時の座標をグリッドに合わせて取得
               var x = $n.position().left;
               // var x = currentNode.currentLeft;
@@ -589,7 +591,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
 
             } else {
-              console.log('storage!!', ui.position);
+              console.log('from storage!!', ui.position, $n.position());
               // $(this).appendTo('.box_storage');
               // 移動終了時の座標を取得
               var x = $n.position().left;
@@ -845,7 +847,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
             ui.positionには、座標変換後の座標が入っている
             */
+            console.log('sc_main before', node.offset());
             node.css({'left': ui.position.left + $(".sc_main_box").scrollLeft()});  
+            console.log('sc_main after', node.offset());
             
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = $this.find('.sc_main .timeline').index(this);
@@ -1250,8 +1254,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             　・box_storageからドラッグした場合は、box_storage上端が原点
             */
            // 下記、ガントチャート表示部の上端を原点とする座標
+            console.log('box_storage before', node.offset());
             var boxStorageTop = $(".sc_main_box").height();
             node.css({'top': ui.position.top - boxStorageTop});
+            console.log('box_storage after', node.offset());
 
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = -1
@@ -1306,4 +1312,151 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     $.error('Method ' + method + ' does not exist on jQuery.timeSchedule');
     return this;
   };
+})(jQuery);
+
+
+// jQueryUI.droppable z-indexによるドロップ判定修正
+(function($){
+
+	$.extend($.ui.ddmanager, {
+
+		// ドロップ処理
+		drop: function( draggable, event ) {
+
+			var dropped = false;
+			var max_z = -1;
+			var _that, z, trgt, pos;
+
+			// Create a copy of the droppables in case the list changes during the drop (#9116)
+			$.each( ( $.ui.ddmanager.droppables[ draggable.options.scope ] || [] ).slice(), function() {
+
+				if ( !this.options ) {
+					return;
+				}
+
+				if ( !this.options.disabled && this.visible &&
+						$.ui.intersect( draggable, this, this.options.tolerance, event ) ) {	// ドラッグ位置に掛かっているドロップ範囲のもののみ
+
+					// get z-index
+					trgt = this.element;
+					z = ( ( trgt.css('zIndex') == 'auto' ) ? 0 : trgt.css('zIndex') ) || 0;
+
+					// 最大z-indexのものを処理対象にする
+					if (z > max_z) {
+						_that = this;
+						max_z = z;
+					}
+				}
+
+				if ( !this.options.disabled && this.visible && this.accept.call( this.element[ 0 ],
+						( draggable.currentItem || draggable.element ) ) ) {
+					this.isout = true;
+					this.isover = false;
+					this._deactivate.call( this, event );
+				}
+
+			} );
+			
+			return (_that) ? _that._drop.call(_that, event) : false;
+
+		},
+		
+		drag: function( draggable, event ) {
+
+			// If you have a highly dynamic page, you might try this option. It renders positions
+			// every time you move the mouse.
+			if ( draggable.options.refreshPositions ) {
+				$.ui.ddmanager.prepareOffsets( draggable, event );
+			}
+			
+			var dropped = false
+				,max_z = -1
+				,_that, z, trgt, pos, _c
+			;
+
+			// Run through all droppables and check their positions based on specific tolerance options
+			$.each( $.ui.ddmanager.droppables[ draggable.options.scope ] || [], function() {
+
+				if ( this.options.disabled || this.greedyChild || !this.visible ) {
+					return;
+				}
+
+				// ドラッグ位置に掛かっているドロップ範囲のものの中からz-indexが最大のものを見つける
+				var intersects = $.ui.intersect( draggable, this, this.options.tolerance, event );
+				if (intersects) {
+
+					// get z-index
+					trgt = this.element;
+					z = ( ( trgt.css('zIndex') == 'auto' ) ? 0 : trgt.css('zIndex') ) || 0;
+
+					// 最大z-indexのものを処理対象にする
+					if ( z > max_z ){
+
+						var c = !intersects && this.isover ?
+							"isout" :
+							( intersects && !this.isover ? "isover" : null );
+
+						_that = this;
+						max_z = z;
+						_c = c;
+
+					}
+
+				}
+			} );
+
+			$.each( $.ui.ddmanager.droppables[ draggable.options.scope ] || [], function() {
+				if ( this.options.disabled || this.greedyChild || !this.visible ) {
+					return;
+				}
+
+				var c;
+				if ( _that === this ) {				// 手前のものは通常通りover,outを処理
+					c = _c;
+				} else {							// 手前それ以外はoutのみ処理
+					c = this.isover ? "isout" : null;
+				}
+
+				if ( !c ) {							// 変わりないものは処理しない
+					return;
+				}
+				
+				var parentInstance, scope, parent;
+
+				if ( this.options.greedy ) {
+
+					// find droppable parents with same scope
+					scope = this.options.scope;
+					parent = this.element.parents( ":data(ui-droppable)" ).filter( function() {
+						return $( this ).droppable( "instance" ).options.scope === scope;
+					} );
+
+					if ( parent.length ) {
+						parentInstance = $( parent[ 0 ] ).droppable( "instance" );
+						parentInstance.greedyChild = ( c === "isover" );
+					}
+				}
+
+				// We just moved into a greedy child
+				if ( parentInstance && c === "isover" ) {
+					parentInstance.isover = false;
+					parentInstance.isout = true;
+					parentInstance._out.call( parentInstance, event );
+				}
+
+				this[ c ] = true;
+				this[ c === "isout" ? "isover" : "isout" ] = false;
+				this[ c === "isover" ? "_over" : "_out" ].call( this, event );
+
+				// We just moved out of a greedy child
+				if ( parentInstance && c === "isout" ) {
+					parentInstance.isout = false;
+					parentInstance.isover = true;
+					parentInstance._over.call( parentInstance, event );
+				}
+			} );
+
+		}
+	});
+
 })(jQuery);
