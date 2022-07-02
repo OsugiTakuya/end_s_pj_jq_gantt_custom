@@ -554,7 +554,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             ui.position.left = ui.offset.left - currentNode.draggableLeft;
             ui.position.top = ui.offset.top - currentNode.draggableTop;
 
-            // テキスト変更（時刻とか）
+            // 時刻テキスト変更
             methods._rewriteBarText.apply($this, [$moveNode, saveData.schedule[scKey]]);
 
             return true;
@@ -570,11 +570,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
             var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
 
-            // ここの時刻の値はどこで使われる？？（次のドラッグ時に引き継がれる？）
+            // ここの時刻の値はどこで使われる？？（_rewriteBarTextではsaveDataを再読み込みする）
             saveData.schedule[scKey].start = methods.formatTime(start);
             saveData.schedule[scKey].end = methods.formatTime(end);
             saveData.schedule[scKey].startTime = start;
             saveData.schedule[scKey].endTime = end;
+
+            // 時刻テキスト変更
+            methods._rewriteBarText.apply($this, [$n, saveData.schedule[scKey]]);
 
             // 追加したデータを削除
             $(this).data('dragCheck', false);
@@ -811,9 +814,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
             ui.positionには、座標変換後の座標が入っている
             */
-            console.log('sc_main before', node.offset());
-            node.css({'left': ui.position.left + $(".sc_main_box").scrollLeft()});  
-            console.log('sc_main after', node.offset());
+            node.css({'left': ui.position.left + $(".sc_main_box").scrollLeft()});
             
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = $this.find('.sc_main .timeline').index(this);
@@ -853,14 +854,27 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         var saveData = methods._loadData.apply($this);
         
-        var x = node.position().left + $(".sc_main_box").scrollLeft();
-        // var w = node.width();
+        var parentNode = node.parent()
 
-        var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
-        // var end = saveData.tableStartTime + (Math.floor((x + w) / setting.widthTimeX) * setting.widthTime);
+        if (parentNode.hasClass('box_storage')) {
+          // 親ノードがボックス置き場
+          var start_text = 'xx:xx'
+          var end_text = 'xx:xx'
 
-        var end = start + (data.endTime - data.startTime);
-        var html = methods.formatTime(start) + '-' + methods.formatTime(end);
+        } else {
+          var x = node.position().left;
+          if (parentNode.hasClass('sc_draggable_wrapper')) {
+            // 親ノードがドラッグ可能領域（ドラッグ中）
+            x += $(".sc_main_box").scrollLeft();
+          }
+          var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
+          var end = start + (data.endTime - data.startTime);
+
+          var start_text = methods.formatTime(start);
+          var end_text = methods.formatTime(end);
+        }
+
+        var html = start_text + '-' + end_text;
         $(node).find('.time').html(html);
       });
     },
@@ -1220,10 +1234,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             　・box_storageからドラッグした場合は、box_storage上端が原点
             */
            // 下記、ガントチャート表示部の上端を原点とする座標
-            console.log('box_storage before', node.offset());
             var boxStorageTop = $(".sc_main_box").height();
             node.css({'top': ui.position.top - boxStorageTop});
-            console.log('box_storage after', node.offset());
 
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = -1
