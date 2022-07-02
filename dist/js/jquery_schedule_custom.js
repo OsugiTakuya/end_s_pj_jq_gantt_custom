@@ -506,9 +506,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             // ボックス初期位置とガントチャート表示部（スクロールの非表示部含む）原点とのマージン
             node.draggableLeft = $(".sc_draggable_wrapper").offset().left;
             node.draggableTop = $(".sc_draggable_wrapper").offset().top;
-
-            // TODO: 必要？？初期状態での親ノードを保持
-            $(this).data('initParentNode', $(this).parent());
             
             node.timeline = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
             node.nowTimeline = node.timeline;
@@ -517,10 +514,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             // 要素を「ガントチャート表示部+ガントチャート置き場」の要素に移動
             // (これによりui.positionの座標系が変化。ガントチャート表示部の上端、左端が原点に)
             $(this).appendTo('.sc_draggable_wrapper');
-            
-            // 座標変換後の初期座標を格納
-            // $(this).data("initTop", ui.position.top);
-            // $(this).data("initTop", ui.offset.top - currentNode.draggableTop);
           },
 
           /**
@@ -558,18 +551,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             // ドラッグ中ボックスの親要素を変更したことによる座標変換
             // ※ドラッグ開始前：ガントチャート表示部の左上（非表示部含む）が原点
             // ※ドラッグ中：ドラッグ可能領域（ガントチャート表示部の見えている部分）の左上が原点
-            // console.log('befor', ui.position);
-            // $moveNode.data('currentPositionLeft', ui.position.left);  // 座標変換前の座標を保持
-            // $moveNode.data('currentPositionTop', ui.position.top);
             ui.position.left = ui.offset.left - currentNode.draggableLeft;
             ui.position.top = ui.offset.top - currentNode.draggableTop;
-            // console.log('after', ui.position);
 
             // テキスト変更（時刻とか）
-            // TODO: この関数を使う前に座標系をもとに戻す等したい
             methods._rewriteBarText.apply($this, [$moveNode, saveData.schedule[scKey]]);
 
-            // console.log([currentNode.currentTop, currentNode.currentLeft], ui.position, $(this).offset());
             return true;
           },
 
@@ -578,36 +565,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var $n = $(this);
             var scKey = $n.data('sc_key');
 
-            // 移動後のボックスの開始、終了時刻
-            // var storage_border = $(".box_storage").offset().top - currentNode.draggableTop;
-            // if (ui.position.top < storage_border) {
-            if (!($n.data('initParentNode').hasClass('box_storage'))) {
-              console.log('from main!!', ui.position, $n.position());
-              // $(this).appendTo('.sc_main');  // 親要素変更すると座標系おかしくなる
-              // 移動終了時の座標をグリッドに合わせて取得
-              var x = $n.position().left;
-              // var x = currentNode.currentLeft;
-              var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
-              var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
+            // 移動終了時の座標をグリッドに合わせて取得
+            var x = $n.position().left;
+            var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
+            var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
 
-            } else {
-              console.log('from storage!!', ui.position, $n.position());
-              // $(this).appendTo('.box_storage');
-              // 移動終了時の座標を取得
-              var x = $n.position().left;
-              // var x = currentNode.currentLeft;
-              var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
-              var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
-            }
-
-            // ※追加したデータを削除する！！
-            $n.removeData("initParentNode");
-
+            // ここの時刻の値はどこで使われる？？（次のドラッグ時に引き継がれる？）
             saveData.schedule[scKey].start = methods.formatTime(start);
             saveData.schedule[scKey].end = methods.formatTime(end);
             saveData.schedule[scKey].startTime = start;
             saveData.schedule[scKey].endTime = end;
 
+            // 追加したデータを削除
             $(this).data('dragCheck', false);
             currentNode = null;
             
@@ -692,11 +661,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         draggable_offset['left'] + draggable_width - $node.width() + 50, // 右側に突き抜けて良い量
         draggable_offset['top'] + draggable_height - $node.height(),
       ]);
-      console.log([
-        draggable_offset['left'], draggable_offset['top'],
-        draggable_offset['left'] + draggable_width, //- $node.width(),
-        draggable_offset['top'] + draggable_height - $node.height(),
-      ])
     },
 
     /**
@@ -876,7 +840,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     },
 
     /**
-     * テキストの変更
+     * テキストの変更（時刻テキスト）
      *
      * @param {jQuery} node
      * @param {Object} data
@@ -888,10 +852,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         var setting = methods._loadSettingData.apply($this);
 
         var saveData = methods._loadData.apply($this);
+        
+        var x = node.position().left + $(".sc_main_box").scrollLeft();
+        // var w = node.width();
 
-        var x = node.position().left; // var w = node.width();
-
-        var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime; // var end = saveData.tableStartTime + (Math.floor((x + w) / setting.widthTimeX) * setting.widthTime);
+        var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
+        // var end = saveData.tableStartTime + (Math.floor((x + w) / setting.widthTimeX) * setting.widthTime);
 
         var end = start + (data.endTime - data.startTime);
         var html = methods.formatTime(start) + '-' + methods.formatTime(end);
@@ -1316,6 +1282,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
 
 // jQueryUI.droppable z-indexによるドロップ判定修正
+// （参考：https://blog.regrex.jp/2016/09/29/post-1141/）
 (function($){
 
 	$.extend($.ui.ddmanager, {
