@@ -565,7 +565,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var $n = $(this);
             var scKey = $n.data('sc_key');
 
-            // 移動終了時の座標をグリッドに合わせて取得
+            // 移動終了時の座標をグリッドに合わせて取得（必要？？）
             var x = $n.position().left;
             var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
             var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
@@ -814,7 +814,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
             ui.positionには、座標変換後の座標が入っている
             */
-            node.css({'left': ui.position.left + $(".sc_main_box").scrollLeft()});
+            var x = ui.position.left + $(".sc_main_box").scrollLeft();
+            var x_grid = setting.widthTimeX * Math.floor(x / setting.widthTimeX);  // グリッドに沿ってx座標切り捨て
+
+            node.css({'left': x_grid});
             
             var nowTimelineNum = saveData.schedule[scKey].timeline;
             var timelineNum = $this.find('.sc_main .timeline').index(this);
