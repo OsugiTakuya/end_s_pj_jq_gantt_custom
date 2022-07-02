@@ -1210,6 +1210,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         $(".sc_main_box").wrap($('<div class="sc_draggable_wrapper"></div>'));  // 親要素追加
         var $box_storage = $('<div class="box_storage"></div>');
         $(".sc_draggable_wrapper").append($box_storage);  // ガントチャート置き場追加
+        $(".sc_draggable_wrapper").css(
+          "height", config.dispScheduleY + config.boxStrageY
+        );
         // ガントチャート置き場の高さ設定
         var $storage = $this.find('.box_storage');
         $storage.css({

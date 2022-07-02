@@ -1,3 +1,7 @@
+/* .container {
+  width: 1500px;
+  margin: auto;
+} */
 .jq-schedule * {
   box-sizing: border-box;
 }
@@ -150,14 +154,15 @@
   float: left;
   position: relative;
   width: fit-content;
-  height: 700px;
   z-index: 8;
 }
 .jq-schedule .box_storage {
   position: relative;
-  border-left: solid 3px #555;
-  border-bottom: solid 3px #555;
-  border-right: solid 3px #555;
+  border-left: solid 1px #555;
+  border-bottom: solid 1px #555;
+  border-right: solid 1px #555;
+  border-top: solid 1px #555;
+  box-shadow: inset 1px 1px #CCC; 
   background: #f0f0f0;
   z-index: 30;
 }
