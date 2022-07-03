@@ -90,7 +90,7 @@
         var isDraggable = true;
         var isResizable = true;
         var $sc = $("#schedule").timeSchedule({
-            startTime: "07:00", // schedule start time(HH:ii)
+            startTime: "08:00", // schedule start time(HH:ii)
             endTime: "21:00",   // schedule end time(HH:ii)
             widthTime: 60 * 10,  // 何秒を1マスとするか
             timeLineY: 60,       // height(px)
@@ -102,130 +102,101 @@
             draggable: isDraggable,
             resizable: isResizable,
             resizableLeft: true,
-            rows : {
-                0 : {
-                    title : '作業者1',
-                    schedule:[
-                        {
-                            start: '09:00',
-                            end: '12:00',
-                            text: 'タスク1',
-                            data: {
-                            }
-                        },
-                        {
-                            start: '11:00',
-                            end: '13:00',
-                            text: 'タスク2',
-                            data: {
-                            }
-                        },
-                        {
-                            start: '12:30',
-                            end: '13:30',
-                            text: 'タスク3',
-                            data: {
-                            }
-                        }
-                    ]
+            dates: [
+                '2022/06/27',
+                '2022/06/28',
+                '2022/06/29',
+            ],
+            titles: [
+                '作業者1',
+                '作業者2',
+                '作業者3',
+                '作業者4',
+                '作業者5',
+            ],
+            schedules: [
+                {
+                    title: '作業者1',
+                    date: '2022/06/27',
+                    start: '09:00',
+                    end: '10:00',
+                    text: 'タスク1',
+                    data: {},
+                    hiddenData: {},
                 },
-                1 : {
-                    title : '作業者2',
-                    schedule:[
-                    ]
+                {
+                    title: '作業者3',
+                    date: '2022/06/27',
+                    start: '10:30',
+                    end: '12:00',
+                    text: 'タスク2',
+                    data: {},
+                    hiddenData: {},
                 },
-                2 : {
-                    title : '作業者3',
-                    schedule:[
-                        {
-                            start: '8:00',
-                            end: '9:00',
-                            text: 'タスク4',
-                            data: {
-                            }
-                        },
-                        {
-                            start: '10:00',
-                            end: '11:00',
-                            text: 'タスク5',
-                            data: {
-                            }
-                        }
-                    ]
+                {
+                    title: '作業者5',
+                    date: '2022/06/27',
+                    start: '09:30',
+                    end: '11:30',
+                    text: 'タスク3',
+                    data: {},
+                    hiddenData: {},
                 },
-                3 : {
-                    title : '作業者4',
-                    schedule:[
-                        {
-                            start: '8:00',
-                            end: '9:00',
-                            text: 'タスク6',
-                            data: {
-                            }
-                        }
-                    ]
+                {
+                    title: '作業者2',
+                    date: '2022/06/28',
+                    start: '09:00',
+                    end: '12:00',
+                    text: 'タスク4',
+                    data: {},
+                    hiddenData: {},
                 },
-                4 : {
-                    title : '作業者5',
-                    schedule:[
-                        {
-                            start: '11:00',
-                            end: '12:00',
-                            text: 'タスク7',
-                            data: {
-                            }
-                        }
-                    ]
+                {
+                    title: '作業者2',
+                    date: '2022/06/28',
+                    start: '10:00',
+                    end: '11:00',
+                    text: 'タスク5',
+                    data: {},
+                    hiddenData: {},
                 },
-                5 : {
-                    title : '作業者6',
-                    schedule:[
-                        {
-                            start: '8:00',
-                            end: '10:05',
-                            text: 'タスク8',
-                            data: {
-                            }
-                        }
-                    ]
+                {
+                    title: '作業者3',
+                    date: '2022/06/28',
+                    start: '09:00',
+                    end: '10:00',
+                    text: 'タスク6',
+                    data: {},
+                    hiddenData: {},
                 },
-                6 : {
-                    title : '作業者7',
-                    schedule:[
-                        {
-                            start: '11:00',
-                            end: '12:00',
-                            text: 'タスク9',
-                            data: {
-                            }
-                        }
-                    ]
+                {
+                    title: '作業者2',
+                    date: '2022/06/29',
+                    start: '09:10',
+                    end: '10:50',
+                    text: 'タスク7',
+                    data: {},
+                    hiddenData: {},
                 },
-                7 : {
-                    title : '作業者8',
-                    schedule:[
-                        {
-                            start: '8:00',
-                            end: '10:05',
-                            text: 'タスク10',
-                            data: {
-                            }
-                        }
-                    ]
+                {
+                    title: '作業者4',
+                    date: '2022/06/29',
+                    start: '11:00',
+                    end: '12:00',
+                    text: 'タスク8',
+                    data: {},
+                    hiddenData: {},
                 },
-                8 : {
-                    title : '作業者9',
-                    schedule:[
-                        {
-                            start: '10:00',
-                            end: '11:00',
-                            text: 'タスク11',
-                            data: {
-                            }
-                        }
-                    ]
-                }
-            },
+                {
+                    title: '作業者5',
+                    date: '2022/06/29',
+                    start: '09:00',
+                    end: '11:00',
+                    text: 'タスク9',
+                    data: {},
+                    hiddenData: {},
+                },
+            ],
             onChange: function(node, data){
                 addLog('onChange', data);
             },
