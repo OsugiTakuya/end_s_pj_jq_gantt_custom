@@ -1,3 +1,7 @@
+/* .container {
+  width: 1500px;
+  margin: auto;
+} */
 .jq-schedule * {
   box-sizing: border-box;
 }
@@ -11,21 +15,26 @@
   width: 100%;
   height: 26px;
 }
-.jq-schedule .sc_menu .sc_header_cell {
-  float: left;
-}
 .jq-schedule .sc_menu .sc_header {
   float: left;
   height: 26px;
   position: relative;
   overflow: hidden;
 }
-.jq-schedule .sc_menu .sc_header .sc_time {
+.jq-schedule .sc_main .date_border_header {
+  float: none;
+  height: 26px;
+  position: relative;
+  overflow: hidden;
+}
+.jq-schedule .sc_menu .sc_header .sc_time,
+.jq-schedule .sc_main .date_border_header .sc_time {
   text-align: center;
   border-left: solid 1px #fff;
   background: #555;
 }
 .jq-schedule .sc_menu .sc_header_cell,
+.jq-schedule .date_border_timeline,
 .jq-schedule .sc_data {
   float: left;
   font-weight: bold;
@@ -41,6 +50,7 @@
 }
 .jq-schedule .sc_menu .sc_header_cell,
 .jq-schedule .sc_header .sc_time,
+.jq-schedule .date_border_header .sc_time,
 .jq-schedule .sc_main_scroll .sc_time {
   color: #fff;
   padding: 0;
@@ -49,6 +59,7 @@
   display: block;
 }
 .jq-schedule .sc_header .sc_time,
+.jq-schedule .date_border_header .sc_time,
 .jq-schedule .sc_main_scroll .sc_time {
   float: left;
 }
@@ -64,7 +75,8 @@
 .jq-schedule .sc_main {
   position: relative;
 }
-.jq-schedule .timeline {
+.jq-schedule .timeline,
+.jq-schedule .date_border_timeline {
   position: relative;
 }
 .jq-schedule .ui-draggable-dragging,
@@ -111,14 +123,27 @@
   left: 0;
 }
 .jq-schedule .timeline,
+.jq-schedule .date_border_timeline,
 .jq-schedule .sc_main .tb {
   border-bottom: solid 2px #666;
 }
-.jq-schedule .sc_data .timeline {
+.jq-schedule .sc_data .timeline,
+.jq-schedule .date_border_timeline {
   overflow: hidden;
   padding: 10px;
 }
-.jq-schedule .sc_data .timeline span {
+.jq-schedule .sc_menu .sc_header_cell,
+.jq-schedule .date_border_timeline {
+  color: #F2E55C;
+  text-align: center;
+  padding: 0;
+}
+.jq-schedule .date_border_timeline {
+  float: none;
+  height: 26px;
+}
+.jq-schedule .sc_data .timeline span,
+.jq-schedule .date_border_timeline span {
   display: block;
 }
 .jq-schedule .sc_data .timeline span.timeline-subtitle {
@@ -150,14 +175,15 @@
   float: left;
   position: relative;
   width: fit-content;
-  height: 700px;
   z-index: 8;
 }
 .jq-schedule .box_storage {
   position: relative;
-  border-left: solid 3px #555;
-  border-bottom: solid 3px #555;
-  border-right: solid 3px #555;
+  border-left: solid 1px #555;
+  border-bottom: solid 1px #555;
+  border-right: solid 1px #555;
+  border-top: solid 1px #555;
+  box-shadow: inset 1px 1px #CCC; 
   background: #f0f0f0;
   z-index: 30;
 }

@@ -205,6 +205,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * @returns {methods}
      */
     addRow: function addRow(timeline, data) {
+      console.error('現verでは非対応');
+
       // 引数チェック（timelineが存在しないものであるか）
       var saveData = methods._loadData.apply($(this));
       var timeline_array = Object.keys(saveData.timeline);
@@ -314,38 +316,38 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * @param top - 移動前からの相対位置
      * @returns {number} - この戻り値は何？？（0か1しか出ない？この戻り値がどこにも使われていない？？）
      */
-    _getTimeLineNumber: function _getTimeLineNumber(node, top) {
-      var $this = $(this);
+    // _getTimeLineNumber: function _getTimeLineNumber(node, top) {
+    //   var $this = $(this);
 
-      var setting = methods._loadSettingData.apply($this);
+    //   var setting = methods._loadSettingData.apply($this);
 
-      var num = 0;
-      var n = 0;
-      var tn = Math.ceil(top / (setting.timeLineY + setting.timeLinePaddingTop + setting.timeLinePaddingBottom));  // 何行分動いたか
+    //   var num = 0;
+    //   var n = 0;
+    //   var tn = Math.ceil(top / (setting.timeLineY + setting.timeLinePaddingTop + setting.timeLinePaddingBottom));  // 何行分動いたか
 
-      for (var i in setting.rows) {
-        var r = setting.rows[i];
-        var tr = 0;
+    //   for (var i in setting.rows) {
+    //     var r = setting.rows[i];
+    //     var tr = 0;
 
-        if (_typeof(r.schedule) === 'object') {
-          tr = r.schedule.length;  // i行目に何行あるか
-        }
+    //     if (_typeof(r.schedule) === 'object') {
+    //       tr = r.schedule.length;  // i行目に何行あるか
+    //     }
 
-        if (node && node.timeline) {  // どのような時に入る？？
-          tr++;
-        }
+    //     if (node && node.timeline) {  // どのような時に入る？？
+    //       tr++;
+    //     }
 
-        n += Math.max(tr, 1);
+    //     n += Math.max(tr, 1);
 
-        if (n >= tn) {
-          break;
-        }
+    //     if (n >= tn) {
+    //       break;
+    //     }
 
-        num++;
-      }
+    //     num++;
+    //   }
 
-      return num;
-    },
+    //   return num;
+    // },
 
     /**
      * 背景データ追加
@@ -387,7 +389,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * スケジュール追加
      *
      * @param {number} timeline - 行id（0始まりインデックス, -1ならガントチャート置き場）
-     * @param {object} d - ガントチャートの1ボックスのstart,end,data,..など
+     * @param {object} d - ガントチャートの1ボックスのデータ（start,end,data,..）
      * @returns {number}
      */
     _addScheduleData: function _addScheduleData(timeline, d) {
@@ -418,11 +420,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             </span>\
             <span class="text"></span>\
           </div>');
-        var stext = methods.formatTime(data.startTime);
-        var etext = methods.formatTime(data.endTime);
 
-        // ボックスが時刻軸上の時の初期設定
+        var stext = data.start;
+        var etext = data.end;
+
         if (timeline != -1) {
+          // ボックスが時刻軸上の時の初期設定
           // timeline行にボックスが既にいくつ存在するか
           var snum = methods._getScheduleCount.apply($this, [data.timeline]);
           
@@ -434,13 +437,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             height: setting.timeLineY
           });
 
-          // ボックスに表示する時刻テキスト
-          $bar.find('.time').text(stext + '-' + etext);
-        
-        // ボックスがガントチャート置き場上の時の初期設定
         } else {
+          // ボックスがガントチャート置き場上の時の初期設定
+          // TODO: 座標未調整
           // ガントチャート置き場にすでにいくつ存在するか
           var snum = methods._getScheduleCount.apply($this, [data.timeline]);
+
           // ボックスの位置（ガントチャート置き場上で重複が少なくなるよう）
           $bar.css({
             left: st * setting.widthTimeX,
@@ -448,10 +450,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             width: (et - st) * setting.widthTimeX,
             height: setting.timeLineY
           });
-
-          // ボックスに表示する時刻テキスト
-          $bar.find('.time').text('xx:xx-xx:xx');
+          stext = 'xx:xx';
+          etext = 'xx:xx';
         }
+        // ボックスに表示する時刻テキスト
+        $bar.find('.time').text(stext + '-' + etext);
         
         // ボックスに表示するテキスト
         if (data.text) {
@@ -463,6 +466,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }
 
         // データの追加
+        // TODO: timeline=-1の時の処理
         var $row = $this.find('.sc_main .timeline').eq(timeline);
         $row.append($bar);
 
@@ -475,8 +479,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           setting.onAppendSchedule.apply($this, [$bar, data]);
         }
         
-        // key
-        var key = saveData.schedule.length - 1;  // 全体で0始まりのボックスid
+        // 全体で0始まりのボックスid（追加も対応できるようinitではなくここで設定）
+        // TODO: 削除の時どうする？
+        var key = saveData.schedule.length - 1;
         $bar.data('sc_key', key);
 
         $bar.on('mouseup', function () {
@@ -507,8 +512,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             node.draggableLeft = $(".sc_draggable_wrapper").offset().left;
             node.draggableTop = $(".sc_draggable_wrapper").offset().top;
             
-            node.timeline = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
-            node.nowTimeline = node.timeline;
             currentNode = node;
 
             // 要素を「ガントチャート表示部+ガントチャート置き場」の要素に移動
@@ -532,25 +535,23 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var $moveNode = $(this);
             var scKey = $moveNode.data('sc_key');
             
-            // 現在のボックスの座標から行番号を取得（→各行の行番号？？）
-            var timelineNum = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
+            // // 現在のボックスの座標から行番号を取得（→各行の行番号？？）
+            // var timelineNum = methods._getTimeLineNumber.apply($this, [currentNode, ui.position.top]);
             
-            // ドラッグ中のボックス位置
+            // // ドラッグ中のボックス位置
             // ui.position.left = Math.floor(ui.position.left / setting.widthTimeX) * setting.widthTimeX;
             
-            // 行番号がドラッグ前後で変わる場合
-            if (currentNode.nowTimeline !== timelineNum) {
-              // 現在のタイムライン（どこにも使われていない？？）
-              currentNode.nowTimeline = timelineNum;
-            }
-            
-            // ボックスの座標変換前に保持
-            // currentNode.currentTop = ui.position.top;
-            // currentNode.currentLeft = ui.position.left;
+            // // 行番号がドラッグ前後で変わる場合
+            // if (currentNode.nowTimeline !== timelineNum) {
+            //   // 現在のタイムライン（どこにも使われていない？？）
+            //   currentNode.nowTimeline = timelineNum;
+            // }
 
             // ドラッグ中ボックスの親要素を変更したことによる座標変換
-            // ※ドラッグ開始前：ガントチャート表示部の左上（非表示部含む）が原点
-            // ※ドラッグ中：ドラッグ可能領域（ガントチャート表示部の見えている部分）の左上が原点
+            /*
+            ※ドラッグ開始前：ガントチャート表示部の左上（非表示部含む）が原点
+            ※ドラッグ中：ドラッグ可能領域（ガントチャート表示部の見えている部分）の左上が原点
+            */
             ui.position.left = ui.offset.left - currentNode.draggableLeft;
             ui.position.top = ui.offset.top - currentNode.draggableTop;
 
@@ -565,12 +566,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var $n = $(this);
             var scKey = $n.data('sc_key');
 
-            // 移動終了時の座標をグリッドに合わせて取得（必要？？）
+            // 移動終了時の座標をグリッドに合わせて取得
             var x = $n.position().left;
             var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
             var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
 
-            // ここの時刻の値はどこで使われる？？（_rewriteBarTextではsaveDataを再読み込みする）
+            // （下記saveDataは、_rewriteBarTextでは時間差のみと、コールバックで利用）
             saveData.schedule[scKey].start = methods.formatTime(start);
             saveData.schedule[scKey].end = methods.formatTime(end);
             saveData.schedule[scKey].startTime = start;
@@ -621,8 +622,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             saveData.schedule[scKey].start = methods.formatTime(start);
             saveData.schedule[scKey].end = methods.formatTime(end);
             saveData.schedule[scKey].startTime = start;
-            saveData.schedule[scKey].endTime = end; // 高さ調整
-
+            saveData.schedule[scKey].endTime = end;
+            
+            // 高さ調整
             methods._resetBarPosition.apply($this, [timelineNum]);
             
             // テキスト変更（時刻とか）
@@ -692,9 +694,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * add rows
      *
      * @param {Number} timeline - 行番号（0始まり昇順。-1は許さない）
-     * @param  {object} row - 各行の情報（.timeSchedule()の引数で与えたrowsの1つ分）
      */
-    _addRow: function _addRow(timeline, row) {
+    _addRow: function _addRow(timeline) {
       // 引数チェック
       if (!(timeline >= 0 && Number.isInteger(timeline))) {
         throw new Error("_addRow関数の引数エラー", timeline, typeof(timeline));
@@ -707,8 +708,17 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         var saveData = methods._loadData.apply($this);
 
-        // 今から作成する行id = 作成済みの行数（$("#...").eq(id)で要素を取得するため。rowsのキーと同じになる）
-        var id = $this.find('.sc_main .timeline').length;
+        // この行に含まれるscheduleデータ取得
+        var schedule_in_row = [];
+        setting.initRow2Schedule[timeline].forEach(function(schedule_id){
+          schedule_in_row.push(setting.schedules[schedule_id]);
+        })
+        var datetitle = setting.row2datetitle[timeline];
+        var row = {
+          'date': datetitle.date,
+          'title': datetitle.title,
+          'schedule': schedule_in_row
+        }
         
         var html;
         html = '';
@@ -719,11 +729,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           $data.append('<span class="timeline-title">' + row.title + '</span>');  // 行名
         }
 
-        if (row.subtitle) {
+        if (row.subtitle) {  // TODO: 現状設定不可
           $data.append('<span class="timeline-subtitle">' + row.subtitle + '</span>');
-        } // event call
-
-
+        }
+        
+        // event call
         if (setting.onInitRow) {
           setting.onInitRow.apply($this, [$data, row]);
         }
@@ -769,8 +779,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         methods._saveData.apply($this, [saveData]);
 
         if (row.class && row.class !== '') {
-          $this.find('.sc_data .timeline').eq(id).addClass(row.class);
-          $this.find('.sc_main .timeline').eq(id).addClass(row.class);
+          $this.find('.sc_data .timeline').eq(timeline).addClass(row.class);
+          $this.find('.sc_main .timeline').eq(timeline).addClass(row.class);
         }
         
         // スケジュールタイムライン
@@ -794,14 +804,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               data.data = bdata.data;
             }
 
-            methods._addScheduleData.apply($this, [id, data]);
+            methods._addScheduleData.apply($this, [timeline, data]);
           }
         }
         // 高さの調整
-        methods._resetBarPosition.apply($this, [id]);
+        methods._resetBarPosition.apply($this, [timeline]);
 
-        // ガントチャート上にボックスを置いたときの処理
-        $this.find('.sc_main .timeline').eq(id).droppable({
+        // timeline上にボックスを置いたときの処理
+        $this.find('.sc_main .timeline').eq(timeline).droppable({
           accept: '.sc_bar',
           drop: function drop(ev, ui) {
             var node = ui.draggable;  // $(.sc_bar)
@@ -809,10 +819,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
             // x座標を補正
             /*
-            topは合っている。
-            box_storageから移動してきた場合は、スクロール部の非表示部の幅を加算
+            topはそのままでOK（drop時に調整される）
+            leftはスクロール部の非表示部の幅を加算
 
-            ui.positionには、座標変換後の座標が入っている
+            ui.positionには座標変換後の値（スクロール非表示部含めない座標系）が入っている
             */
             var x = ui.position.left + $(".sc_main_box").scrollLeft();
             var x_grid = setting.widthTimeX * Math.floor(x / setting.widthTimeX);  // グリッドに沿ってx座標切り捨て
@@ -824,7 +834,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             
             // タイムラインの変更
             saveData.schedule[scKey].timeline = timelineNum;
-            node.appendTo(this);  // div.timeline[id]
+            node.appendTo(this);  // this==div.timeline[timeline]
             
             // 高さ調整
             methods._resetBarPosition.apply($this, [nowTimelineNum]);
@@ -834,7 +844,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         
         // コールバックがセットされていたら呼出
         if (setting.onAppendRow) {
-          $this.find('.sc_main .timeline').eq(id).find('.sc_bar').each(function () {
+          $this.find('.sc_main .timeline').eq(timeline).find('.sc_bar').each(function () {
             var $n = $(this);
             var scKey = $n.data('sc_key');
             setting.onAppendRow.apply($this, [$n, saveData.schedule[scKey]]);
@@ -847,7 +857,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * テキストの変更（時刻テキスト）
      *
      * @param {jQuery} node
-     * @param {Object} data
+     * @param {Object} data - startとendの時間差のみ利用
      */
     _rewriteBarText: function _rewriteBarText(node, data) {
       return this.each(function () {
@@ -855,7 +865,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         var setting = methods._loadSettingData.apply($this);
 
-        var saveData = methods._loadData.apply($this);
+        var saveData = methods._loadData.apply($this);  // tableStartTimeのみ使用
         
         var parentNode = node.parent()
 
@@ -865,6 +875,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           var end_text = 'xx:xx'
 
         } else {
+          // 親ノードがドラッグ可能領域（ドラッグ中）またはそれ以外（timelineに置いたとき）
           var x = node.position().left;
           if (parentNode.hasClass('sc_draggable_wrapper')) {
             // 親ノードがドラッグ可能領域（ドラッグ中）
@@ -970,10 +981,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         
         // ガントチャート置き場に置いたときの処理
         } else {
-          // // このボックスの高さを設定
-          // $e1.css({
-          //   top: h * setting.timeLineY + setting.timeLinePaddingTop
-          // });
         }
       });
     },
@@ -1032,7 +1039,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         var $this = $(this);
         var setting = methods._loadSettingData.apply($this);
         var scWidth = $this.width();
-        var scMainWidth = scWidth - setting.dataWidth - setting.verticalScrollbar - 15;  // ガントチャート表示部の幅
+        var scMainWidth = scWidth - setting.dataWidth - setting.verticalScrollbar - 5;  // ガントチャート表示部の幅
         $this.find('.box_storage').width(scMainWidth);
       });
     },
@@ -1071,7 +1078,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             saveData.schedule[scKey].startTime = start;
             saveData.schedule[scKey].endTime = end;
 
-            methods._rewriteBarText.apply($this, [$bar, saveData.schedule[scKey]]); // if setting
+            methods._rewriteBarText.apply($this, [$bar, saveData.schedule[scKey]]);
 
 
             if (setting.onChange) {
@@ -1085,6 +1092,92 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     },
 
     /**
+     * ガントチャートに日付と時刻ラベルの行を追加
+     * @param {string} date 
+     */
+    _addDateBorderRow: function _addDateBorderRow(date) {
+      var $this = $(this);
+
+      // 行タイトル部に日付追加
+      var html = '<div class="date_border_timeline"></div>';
+      var $data = $(html);
+      $data.html('<span>'+date+'</span>');
+      $this.find('.sc_data_scroll').append($data);
+
+      // ガントチャート部に時刻ラベル追加
+      var $dateBorderRow = $('<div class=date_border_header></div>');
+      $this.find('.sc_main').append($dateBorderRow);
+      methods._addTimeLabelRow.apply($this, [$this.find('.sc_main .date_border_header').eq(-1)]);
+    },
+
+    /**
+     * 時刻ラベルを追加
+     * （saveData,saveSettingDataの情報をもとに、$parentNodeの子ノードとして追加）
+     * @param {jQuery} $parentNode
+     */
+    _addTimeLabelRow: function _addTimeLabelRow($parentNode) {
+      var $this = $(this);
+      var config = methods._loadSettingData.apply($this);
+      var saveData = methods._loadData.apply($this);
+      var tableStartTime = saveData.tableStartTime;
+      var tableEndTime = saveData.tableEndTime;
+
+      var html = '';
+      var beforeTime = -1;
+      for (var t = tableStartTime; t < tableEndTime; t += config.widthTime) {
+        if (beforeTime < 0 || Math.floor(beforeTime / 3600) !== Math.floor(t / 3600)) {
+          html = '';
+          html += '<div class="sc_time">' + methods.formatTime(t) + '</div>';
+          var $time = $(html);
+          var cn = Number(Math.min(Math.ceil((t + config.widthTime) / 3600) * 3600, tableEndTime) - t);
+          var cellNum = Math.floor(cn / config.widthTime);
+          $time.width(cellNum * config.widthTimeX);
+          $parentNode.append($time);
+          beforeTime = t;
+        }
+      }
+    },
+
+    /**
+     * 日付文字列をスクロールによって変化
+     * @param {jQuery} $elem_header_cell - 日付文字列を含む要素
+     * @param {object} config - _loadSettingDataで読みこんだデータ
+     */
+    _changeDateLabel: function _changeDateLabel($elem_header_cell, config) {
+      var $this = $(this);
+      var schedule_top = $this.offset().top;
+      var $border = $this.find('.sc_data_scroll .date_border_timeline');
+      var lo = 0;
+      var hi = 0;
+      for (var i = 0; i < config.dates.length; i++) {
+        if (i == 0) {
+          lo = 0;
+        } else {
+          lo = $border.eq(i-1).offset().top;
+        }
+        hi = $border.eq(i).offset().top;
+        if (lo <= schedule_top && schedule_top < hi) {
+          $elem_header_cell.html('<span>'+config.dates[i]+'</span>');
+          break;
+        }
+      }
+    },
+
+    /**
+     * スケジュールデータのdate,titleが存在するかチェック
+     * @param {Array} schedules
+     * @param {Array} dates
+     * @param {Array} titles
+     */
+    _existsDateTitle: function _existsDateTitle(schedules, dates, titles) {
+      return schedules.every(function (schedule) {
+        var includesDate = dates.includes(schedule.date);
+        var includesTitle = titles.includes(schedule.title);
+        return includesDate && includesTitle;
+      })
+    },
+
+    /**
      * initialize
      */
     init: function init(options) {
@@ -1092,7 +1185,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         var $this = $(this);
         var config = $.extend({
           className: 'jq-schedule',
-          rows: {},
+          dates: [''],
+          titles: [''],
+          schedules: [],
           startTime: '07:00',
           endTime: '19:30',
           widthTimeX: 25,  // 時刻軸の幅
@@ -1116,7 +1211,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           bundleMoveWidth: 1,
           // Y
           dispScheduleY: 500,
-          boxStrageY: 100,
+          boxStrageY: 200,
           // width to move all schedules to the right of the clicked time cell
           draggable: true,
           resizable: true,
@@ -1130,14 +1225,46 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           onScheduleClick: null
         }, options);
 
-        // rowsが0始まり連番かチェック
-        var l_max = Object.keys(config.rows).length;
-        for (var l = 0; l < l_max; l++) {
-          if (!(l in config.rows)) {
-            throw new Error("rowsのキーが0始まり連番でない");
-          }
+        // schedulesの各要素の date,title が dates,titles に含まれるかチェック
+        var existsFlag = methods._existsDateTitle.apply(
+          $this, [config.schedules, config.dates, config.titles]);
+        if (!existsFlag) {
+          console.error('schedulesに不適切なdateまたはtitleが存在');
         }
 
+        // dates,titlesとガントチャート表示部の行IDの対応関係を作成
+        var datetitle2row = {};
+        var row2datetitle = [];
+        var loop = 0;
+        for (var i = 0; i < config.dates.length; i++) {
+          var _title2row = {};
+          for (var j = 0; j < config.titles.length; j++) {
+            _title2row[config.titles[j]] = loop;
+            row2datetitle.push({'date': config.dates[i], 'title': config.titles[j]});
+            loop++;
+          }
+          datetitle2row[config.dates[i]] = _title2row
+        }
+        config.datetitle2row = datetitle2row;
+        config.row2datetitle = row2datetitle;
+
+        // 初期状態での各行IDに対するschedulesのID
+        var initRow2Schedule = [];
+        for (var i = 0; i < config.row2datetitle.length; i++) {  // initRow2Schedule=[[],[],..,[]]
+          initRow2Schedule.push([]);
+        }
+        var date = '';
+        var title = '';
+        var row = 0;
+        for (var i = 0; i < config.schedules.length; i++) {
+          date = config.schedules[i].date;
+          title = config.schedules[i].title;
+          row = config.datetitle2row[date][title];
+          initRow2Schedule[row].push(i);
+        }
+        config.initRow2Schedule = initRow2Schedule;
+
+        // configデータを保存
         methods._saveSettingData.apply($this, [config]);
 
         var tableStartTime = methods.calcStringTime(config.startTime);
@@ -1152,7 +1279,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         var html = '' +
           '<div class="sc_menu">' + '\n' +  // 時刻を表示する行
-            '<div class="sc_header_cell"><span>&nbsp;</span></div>' + '\n' +  // 左上の空白セル
+            '<div class="sc_header_cell"></div>' + '\n' +  // 左上の空白セル
             '<div class="sc_header">' + '\n' +
               '<div class="sc_header_scroll"></div>' + '\n' +  // 時刻
             '</div>' + '\n' +
@@ -1172,27 +1299,21 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         $this.addClass(config.className);
         // ガントチャート表示部の高さ設定
         $this.find('.jq-schedule .sc_data,.sc_main_box').css('height', config.dispScheduleY);
+
+        // <sc_header_cell> 表の左上：初日の日付を記載
+        var elem_header_cell = $this.find('.sc_header_cell');
+        elem_header_cell.html('<span>'+config.dates[0]+'</span>');
+
         // 作業者名、時刻ラベルのスクロール設定
         $this.find('.sc_main_box').on('scroll', function () {
           $this.find('.sc_data_scroll').css('top', $(this).scrollTop() * -1);
           $this.find('.sc_header_scroll').css('left', $(this).scrollLeft() * -1);
+          // 表の左上の日付をスクロールに合わせて変化
+          methods._changeDateLabel.apply($this, [elem_header_cell, config]);
         });
 
-        var beforeTime = -1;
-
         // <sc_time>（時刻が記載されている各マス）を<sc_header_scroll>の子要素へ追加
-        for (var t = tableStartTime; t < tableEndTime; t += config.widthTime) {
-          if (beforeTime < 0 || Math.floor(beforeTime / 3600) !== Math.floor(t / 3600)) {
-            html = '';
-            html += '<div class="sc_time">' + methods.formatTime(t) + '</div>';
-            var $time = $(html);
-            var cn = Number(Math.min(Math.ceil((t + config.widthTime) / 3600) * 3600, tableEndTime) - t);
-            var cellNum = Math.floor(cn / config.widthTime);
-            $time.width(cellNum * config.widthTimeX);
-            $this.find('.sc_header_scroll').append($time);
-            beforeTime = t;
-          }
-        }
+        methods._addTimeLabelRow.apply($this, [$this.find('.sc_header_scroll')]);
 
         // ガントチャート表示部の幅を調整
         $(window).on('resize', function () {
@@ -1200,16 +1321,27 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }).trigger('resize'); // addrow
 
         // 各行の描画（行ごとにボックス作成）
-        for (var i in config.rows) {
-          // objectのkeyはJSの仕様でstringになるため、intに変換
-          i = parseInt(i, 10);
-          methods._addRow.apply($this, [i, config.rows[i]]);
+        var _dateBefore = config.dates[0];
+        var _dateNow = '';
+        for (var i = 0; i < config.row2datetitle.length; i++) {
+          _dateNow = config.row2datetitle[i].date;
+          if (_dateBefore != _dateNow) {
+            // 日付の変わり目に境界を追加
+            methods._addDateBorderRow.apply($this, [_dateNow]);
+          }
+          // ガントチャートに1行追加
+          methods._addRow.apply($this, [i]);
+
+          _dateBefore = _dateNow;
         }
 
         // ガントチャート置き場
         $(".sc_main_box").wrap($('<div class="sc_draggable_wrapper"></div>'));  // 親要素追加
         var $box_storage = $('<div class="box_storage"></div>');
         $(".sc_draggable_wrapper").append($box_storage);  // ガントチャート置き場追加
+        $(".sc_draggable_wrapper").css(
+          "height", config.dispScheduleY + config.boxStrageY
+        );
         // ガントチャート置き場の高さ設定
         var $storage = $this.find('.box_storage');
         $storage.css({
@@ -1235,6 +1367,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             ・座標系は、
             　・timelineからドラッグした場合は、そのtimelineの上端が原点
             　・box_storageからドラッグした場合は、box_storage上端が原点
+            →dropしたらbox_storageの上端原点の座標系に変化
             */
            // 下記、ガントチャート表示部の上端を原点とする座標
             var boxStorageTop = $(".sc_main_box").height();
@@ -1244,23 +1377,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var timelineNum = -1
             
             // ボックスのタイムライン、時刻等の変更
-            saveData.schedule[scKey].timeline = -1;  // どこに反映される？
-            node.appendTo(this);  // div.box_storage
+            saveData.schedule[scKey].timeline = timelineNum;
+            node.appendTo(this);  // this==div.box_storage
 
             // 高さ調整
             methods._resetBarPosition.apply($this, [nowTimelineNum]);
             methods._resetBarPosition.apply($this, [timelineNum]);
 
-            /*
-            ※注意
-            ボックス置き場のz-indexはガントチャート表示より大きいが、
-            下記コードでpropergationが止まらない。
-            これはjQueryの仕様で、先に設定したdroppableが先に判定されるそう。
-            今回は、ボックス置き場に置いたら、
-            　1.ガントチャート表示部のある行にdrop判定 → 該当timelineへnode追加、高さ調整
-            　2.ボックス置き場にドロップ判定 → 当要素にnode追加、高さ調整
-            となるため、悪影響な無いはず。
-            */
             return false;
           }
         });
