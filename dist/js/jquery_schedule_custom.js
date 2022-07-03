@@ -719,10 +719,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           'title': datetitle.title,
           'schedule': schedule_in_row
         }
-
-        // 今から作成する行id = 作成済みの行数（$("#...").eq(id)で要素を取得するため。rowsのキーと同じになる）
-        // var id = $this.find('.sc_main .timeline').length;
-        var id = timeline;
         
         var html;
         html = '';
@@ -783,8 +779,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         methods._saveData.apply($this, [saveData]);
 
         if (row.class && row.class !== '') {
-          $this.find('.sc_data .timeline').eq(id).addClass(row.class);
-          $this.find('.sc_main .timeline').eq(id).addClass(row.class);
+          $this.find('.sc_data .timeline').eq(timeline).addClass(row.class);
+          $this.find('.sc_main .timeline').eq(timeline).addClass(row.class);
         }
         
         // スケジュールタイムライン
@@ -808,14 +804,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
               data.data = bdata.data;
             }
 
-            methods._addScheduleData.apply($this, [id, data]);
+            methods._addScheduleData.apply($this, [timeline, data]);
           }
         }
         // 高さの調整
-        methods._resetBarPosition.apply($this, [id]);
+        methods._resetBarPosition.apply($this, [timeline]);
 
         // timeline上にボックスを置いたときの処理
-        $this.find('.sc_main .timeline').eq(id).droppable({
+        $this.find('.sc_main .timeline').eq(timeline).droppable({
           accept: '.sc_bar',
           drop: function drop(ev, ui) {
             var node = ui.draggable;  // $(.sc_bar)
@@ -838,7 +834,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             
             // タイムラインの変更
             saveData.schedule[scKey].timeline = timelineNum;
-            node.appendTo(this);  // this==div.timeline[id]
+            node.appendTo(this);  // this==div.timeline[timeline]
             
             // 高さ調整
             methods._resetBarPosition.apply($this, [nowTimelineNum]);
@@ -848,7 +844,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         
         // コールバックがセットされていたら呼出
         if (setting.onAppendRow) {
-          $this.find('.sc_main .timeline').eq(id).find('.sc_bar').each(function () {
+          $this.find('.sc_main .timeline').eq(timeline).find('.sc_bar').each(function () {
             var $n = $(this);
             var scKey = $n.data('sc_key');
             setting.onAppendRow.apply($this, [$n, saveData.schedule[scKey]]);
@@ -1096,6 +1092,78 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
     },
 
     /**
+     * ガントチャートに日付と時刻ラベルの行を追加
+     * @param {string} date 
+     */
+    _addDateBorderRow: function _addDateBorderRow(date) {
+      var $this = $(this);
+
+      // 行タイトル部に日付追加
+      var html = '<div class="date_border_timeline"></div>';
+      var $data = $(html);
+      $data.html('<span>'+date+'</span>');
+      $this.find('.sc_data_scroll').append($data);
+
+      // ガントチャート部に時刻ラベル追加
+      var $dateBorderRow = $('<div class=date_border_header></div>');
+      $this.find('.sc_main').append($dateBorderRow);
+      methods._addTimeLabelRow.apply($this, [$this.find('.sc_main .date_border_header').eq(-1)]);
+    },
+
+    /**
+     * 時刻ラベルを追加
+     * （saveData,saveSettingDataの情報をもとに、$parentNodeの子ノードとして追加）
+     * @param {jQuery} $parentNode
+     */
+    _addTimeLabelRow: function _addTimeLabelRow($parentNode) {
+      var $this = $(this);
+      var config = methods._loadSettingData.apply($this);
+      var saveData = methods._loadData.apply($this);
+      var tableStartTime = saveData.tableStartTime;
+      var tableEndTime = saveData.tableEndTime;
+
+      var html = '';
+      var beforeTime = -1;
+      for (var t = tableStartTime; t < tableEndTime; t += config.widthTime) {
+        if (beforeTime < 0 || Math.floor(beforeTime / 3600) !== Math.floor(t / 3600)) {
+          html = '';
+          html += '<div class="sc_time">' + methods.formatTime(t) + '</div>';
+          var $time = $(html);
+          var cn = Number(Math.min(Math.ceil((t + config.widthTime) / 3600) * 3600, tableEndTime) - t);
+          var cellNum = Math.floor(cn / config.widthTime);
+          $time.width(cellNum * config.widthTimeX);
+          $parentNode.append($time);
+          beforeTime = t;
+        }
+      }
+    },
+
+    /**
+     * 日付文字列をスクロールによって変化
+     * @param {jQuery} $elem_header_cell - 日付文字列を含む要素
+     * @param {object} config - _loadSettingDataで読みこんだデータ
+     */
+    _changeDateLabel: function _changeDateLabel($elem_header_cell, config) {
+      var $this = $(this);
+      var schedule_top = $this.offset().top;
+      var $border = $this.find('.sc_data_scroll .date_border_timeline');
+      var lo = 0;
+      var hi = 0;
+      for (var i = 0; i < config.dates.length; i++) {
+        if (i == 0) {
+          lo = 0;
+        } else {
+          lo = $border.eq(i-1).offset().top;
+        }
+        hi = $border.eq(i).offset().top;
+        if (lo <= schedule_top && schedule_top < hi) {
+          $elem_header_cell.html('<span>'+config.dates[i]+'</span>');
+          break;
+        }
+      }
+    },
+
+    /**
      * スケジュールデータのdate,titleが存在するかチェック
      * @param {Array} schedules
      * @param {Array} dates
@@ -1211,7 +1279,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         var html = '' +
           '<div class="sc_menu">' + '\n' +  // 時刻を表示する行
-            '<div class="sc_header_cell"><span>&nbsp;</span></div>' + '\n' +  // 左上の空白セル
+            '<div class="sc_header_cell"></div>' + '\n' +  // 左上の空白セル
             '<div class="sc_header">' + '\n' +
               '<div class="sc_header_scroll"></div>' + '\n' +  // 時刻
             '</div>' + '\n' +
@@ -1231,27 +1299,21 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         $this.addClass(config.className);
         // ガントチャート表示部の高さ設定
         $this.find('.jq-schedule .sc_data,.sc_main_box').css('height', config.dispScheduleY);
+
+        // <sc_header_cell> 表の左上：初日の日付を記載
+        var elem_header_cell = $this.find('.sc_header_cell');
+        elem_header_cell.html('<span>'+config.dates[0]+'</span>');
+
         // 作業者名、時刻ラベルのスクロール設定
         $this.find('.sc_main_box').on('scroll', function () {
           $this.find('.sc_data_scroll').css('top', $(this).scrollTop() * -1);
           $this.find('.sc_header_scroll').css('left', $(this).scrollLeft() * -1);
+          // 表の左上の日付をスクロールに合わせて変化
+          methods._changeDateLabel.apply($this, [elem_header_cell, config]);
         });
 
-        var beforeTime = -1;
-
         // <sc_time>（時刻が記載されている各マス）を<sc_header_scroll>の子要素へ追加
-        for (var t = tableStartTime; t < tableEndTime; t += config.widthTime) {
-          if (beforeTime < 0 || Math.floor(beforeTime / 3600) !== Math.floor(t / 3600)) {
-            html = '';
-            html += '<div class="sc_time">' + methods.formatTime(t) + '</div>';
-            var $time = $(html);
-            var cn = Number(Math.min(Math.ceil((t + config.widthTime) / 3600) * 3600, tableEndTime) - t);
-            var cellNum = Math.floor(cn / config.widthTime);
-            $time.width(cellNum * config.widthTimeX);
-            $this.find('.sc_header_scroll').append($time);
-            beforeTime = t;
-          }
-        }
+        methods._addTimeLabelRow.apply($this, [$this.find('.sc_header_scroll')]);
 
         // ガントチャート表示部の幅を調整
         $(window).on('resize', function () {
@@ -1259,8 +1321,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }).trigger('resize'); // addrow
 
         // 各行の描画（行ごとにボックス作成）
+        var _dateBefore = config.dates[0];
+        var _dateNow = '';
         for (var i = 0; i < config.row2datetitle.length; i++) {
+          _dateNow = config.row2datetitle[i].date;
+          if (_dateBefore != _dateNow) {
+            // 日付の変わり目に境界を追加
+            methods._addDateBorderRow.apply($this, [_dateNow]);
+          }
+          // ガントチャートに1行追加
           methods._addRow.apply($this, [i]);
+
+          _dateBefore = _dateNow;
         }
 
         // ガントチャート置き場
