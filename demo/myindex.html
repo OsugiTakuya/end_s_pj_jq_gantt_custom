@@ -23,6 +23,9 @@
         #logs .table th{
             border: none;
         }
+        #schedule .sc_bar_insert {
+            background-color: chocolate;
+        }
     </style>
 
 </head>
@@ -48,6 +51,11 @@
     <div style="padding: 0 0 40px;">
         <!-- ガントチャート -->
         <div id="schedule"></div>
+
+        <!-- dev -->
+        <div style="padding: 0 0 12px;">
+            <button id="event_scheduleData" class="btn btn-default" style="margin-bottom: 12px;">scheduleData</button>
+        </div>
 
         <!-- ログ -->
         <div class="row">
@@ -123,7 +131,7 @@
                     end: '10:00',
                     text: 'タスク1',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 1}
                 },
                 {
                     title: '作業者3',
@@ -132,7 +140,7 @@
                     end: '12:00',
                     text: 'タスク2',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 2},
                 },
                 {
                     title: '作業者5',
@@ -141,7 +149,7 @@
                     end: '11:30',
                     text: 'タスク3',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 3},
                 },
                 {
                     title: '作業者2',
@@ -150,7 +158,7 @@
                     end: '12:00',
                     text: 'タスク4',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 4},
                 },
                 {
                     title: '作業者2',
@@ -159,7 +167,7 @@
                     end: '11:00',
                     text: 'タスク5',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 5},
                 },
                 {
                     title: '作業者3',
@@ -168,7 +176,7 @@
                     end: '10:00',
                     text: 'タスク6',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 6},
                 },
                 {
                     title: '作業者2',
@@ -177,7 +185,7 @@
                     end: '10:50',
                     text: 'タスク7',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 7},
                 },
                 {
                     title: '作業者4',
@@ -186,7 +194,7 @@
                     end: '12:00',
                     text: 'タスク8',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 8},
                 },
                 {
                     title: '作業者5',
@@ -195,7 +203,7 @@
                     end: '11:00',
                     text: 'タスク9',
                     data: {},
-                    hiddenData: {},
+                    hiddenData: {'ID': 9},
                 },
             ],
             onChange: function(node, data){
@@ -270,6 +278,25 @@
         $('#clear-logs').on('click', function(){
             $('#logs .table').empty();
         });
+
+        $('#add_sagyou').on('click', function(){
+            var date = '2022/06/27(月)';
+            var start = '08:30';
+            var end = '09:00';
+            var title = '作業者2';
+            var text = '追加タスク';
+            var timeline = $sc.timeSchedule('getTimelineFromDateTitle', date, title);
+            timeline = -1;
+            $sc.timeSchedule('addSchedule', timeline, {
+                start: start,
+                end: end,
+                text: text,
+                data:{
+                    class: 'sc_bar_insert'
+                },
+                hiddenData: {'ID': 10},
+            });
+        })
     });
 </script>
 </body>
