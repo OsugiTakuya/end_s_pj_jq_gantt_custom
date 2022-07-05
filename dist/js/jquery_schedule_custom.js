@@ -174,7 +174,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       var saveData = methods._loadData.apply($(this));
       var timeline_array = Object.keys(saveData.timeline);
       timeline_array = timeline_array.map(k => +k)  // 整数化
-      if (!(timeline_array.includes(timeline)) || timeline==-1) {
+      if (!(timeline_array.includes(timeline) || timeline==-1)) {
         throw new Error('addSchedule: timeline='+timeline+' は存在しない');
       }
 
@@ -191,6 +191,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         if (data.data) {
           d.data = data.data;
+        }
+        if (data.hiddenData) {
+          d.hiddenData = data.hiddenData;
         }
 
         methods._addScheduleData.apply($this, [timeline, d]);
@@ -443,14 +446,14 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
         } else {
           // ボックスがガントチャート置き場上の時の初期設定
-          // TODO: 座標未調整
           // ガントチャート置き場にすでにいくつ存在するか
           var snum = methods._getScheduleCount.apply($this, [data.timeline]);
 
-          // ボックスの位置（ガントチャート置き場上で重複が少なくなるよう）
+          // ボックスの位置（置き場左上が原点の座標系）
+          // TODO: ガントチャート置き場上で重複が少なくなるように
           $bar.css({
-            left: st * setting.widthTimeX,
-            top: snum * setting.timeLineY + setting.timeLinePaddingTop,
+            left: 0,
+            top: 0,
             width: (et - st) * setting.widthTimeX,
             height: setting.timeLineY
           });
@@ -470,8 +473,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }
 
         // データの追加
-        // TODO: timeline=-1の時の処理
-        var $row = $this.find('.sc_main .timeline').eq(timeline);
+        if (timeline != -1) {
+          var $row = $this.find('.sc_main .timeline').eq(timeline);
+        } else {
+          var $row = $this.find('.box_storage');
+        }
         $row.append($bar);
 
         saveData.schedule.push(data);
@@ -1178,6 +1184,26 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             break;
           }
         }
+      }
+    },
+    
+    /**
+     * 日付と行タイトルから行番号を取得
+     * @param {string} date 
+     * @param {string} title 
+     * @return {number}
+     */
+    getTimelineFromDateTitle: function getTimelineFromDateTitle(date, title) {
+      var config = methods._loadSettingData.apply($(this));
+      var datetitle2row = config.datetitle2row;
+      if (date in datetitle2row) {
+        if (title in datetitle2row[date]) {
+          return datetitle2row[date][title];
+        } else {
+          console.error('titleが存在しません。', title, Object.keys(datetitle2row[date]));
+        }
+      } else {
+        console.error('dateが存在しません。', date, Object.keys(datetitle2row));
       }
     },
 

@@ -23,6 +23,9 @@
         #logs .table th{
             border: none;
         }
+        #schedule .sc_bar_insert {
+            background-color: chocolate;
+        }
     </style>
 
 </head>
@@ -275,6 +278,25 @@
         $('#clear-logs').on('click', function(){
             $('#logs .table').empty();
         });
+
+        $('#add_sagyou').on('click', function(){
+            var date = '2022/06/27(月)';
+            var start = '08:30';
+            var end = '09:00';
+            var title = '作業者2';
+            var text = '追加タスク';
+            var timeline = $sc.timeSchedule('getTimelineFromDateTitle', date, title);
+            timeline = -1;
+            $sc.timeSchedule('addSchedule', timeline, {
+                start: start,
+                end: end,
+                text: text,
+                data:{
+                    class: 'sc_bar_insert'
+                },
+                hiddenData: {'ID': 10},
+            });
+        })
     });
 </script>
 </body>
