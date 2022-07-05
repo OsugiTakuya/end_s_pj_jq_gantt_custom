@@ -139,6 +139,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * reset data
      */
     resetData: function resetData() {
+      console.error('現Verでは未対応');
+
       return this.each(function () {
         var $this = $(this);
 
@@ -228,6 +230,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * @returns {methods}
      */
     resetRowData: function resetRowData() {
+      console.error('現Verでは未対応');
+
       return this.each(function () {
         var $this = $(this);
 
@@ -571,7 +575,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             var start = saveData.tableStartTime + Math.floor(x / setting.widthTimeX) * setting.widthTime;
             var end = start + (saveData.schedule[scKey].endTime - saveData.schedule[scKey].startTime);
 
-            // （下記saveDataは、_rewriteBarTextでは時間差のみと、コールバックで利用）
+            // saveData更新（下記により_saveDataで保存したデータも書き変わる）
             saveData.schedule[scKey].start = methods.formatTime(start);
             saveData.schedule[scKey].end = methods.formatTime(end);
             saveData.schedule[scKey].startTime = start;
@@ -793,6 +797,12 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             data.start = s;
             data.end = e;
 
+            if (bdata.date) {
+              data.date = bdata.date;
+            }
+            if (bdata.title) {
+              data.title = bdata.title;
+            }
             if (bdata.text) {
               data.text = bdata.text;
             }
@@ -802,6 +812,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 
             if (bdata.data) {
               data.data = bdata.data;
+            }
+            if (bdata.hiddenData) {
+              data.hiddenData = bdata.hiddenData;
             }
 
             methods._addScheduleData.apply($this, [timeline, data]);
@@ -834,6 +847,9 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             
             // タイムラインの変更
             saveData.schedule[scKey].timeline = timelineNum;
+            var datetitle = setting.row2datetitle[timelineNum];
+            saveData.schedule[scKey].date = datetitle.date;
+            saveData.schedule[scKey].title = datetitle.title;
             node.appendTo(this);  // this==div.timeline[timeline]
             
             // 高さ調整
@@ -1378,6 +1394,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
             
             // ボックスのタイムライン、時刻等の変更
             saveData.schedule[scKey].timeline = timelineNum;
+            saveData.schedule[scKey].date = '';
+            saveData.schedule[scKey].title = '';
             node.appendTo(this);  // this==div.box_storage
 
             // 高さ調整
