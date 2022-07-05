@@ -1165,16 +1165,18 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
       var $border = $this.find('.sc_data_scroll .date_border_timeline');
       var lo = 0;
       var hi = 0;
-      for (var i = 0; i < config.dates.length; i++) {
-        if (i == 0) {
-          lo = 0;
-        } else {
-          lo = $border.eq(i-1).offset().top;
-        }
-        hi = $border.eq(i).offset().top;
-        if (lo <= schedule_top && schedule_top < hi) {
-          $elem_header_cell.html('<span>'+config.dates[i]+'</span>');
-          break;
+      if (config.dates.length > 2) {
+        for (var i = 0; i < config.dates.length; i++) {
+          if (i == 0) {
+            lo = 0;
+          } else {
+            lo = $border.eq(i-1).offset().top;
+          }
+          hi = $border.eq(i).offset().top;
+          if (lo <= schedule_top && schedule_top < hi) {
+            $elem_header_cell.html('<span>'+config.dates[i]+'</span>');
+            break;
+          }
         }
       }
     },
