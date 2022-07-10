@@ -9,7 +9,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
   'use strict';
 
   var PLUGIN_NAME = 'jqSchedule';
-  var scKeySelected = [];
   var methods = {
     /**
      *
@@ -208,18 +207,24 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * @returns {Array}
      */
     getSelectedScKey: function getSelectedScKey() {
-      return scKeySelected;
+      var config = methods._loadSettingData.apply($(this));
+      return config.scKeySelected;
     },
 
     /**
-     * 選択しているボックスを削除する
+     * 選択しているボックスを全て削除する
      */
     removeSelectedSchedule: function removeSelectedSchedule() {
-      var _scKeySelected = methods.getSelectedScKey.apply($(this));
-      var $jq_sched = $(this);
-      _scKeySelected.forEach(function(scKey) {
-        methods.removeSchedule.apply($jq_sched, [scKey]);
-      })
+      var scKeySelected = methods.getSelectedScKey.apply($(this));
+      if (scKeySelected) {
+        // 選択ボックスをscKeyの降順に並べ替え（削除するscKeyが変更されないよう）
+        scKeySelected.sort((a, b) => b - a);
+        // 削除
+        var $jq_sched = $(this);
+        scKeySelected.forEach(function(scKey) {
+          methods.removeSchedule.apply($jq_sched, [scKey]);
+        })
+      }
     },
 
     /**
@@ -228,6 +233,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      */
     removeSchedule: function removeSchedule(scKey) {
       var $this = $(this);
+      var config = methods._loadSettingData.apply($this);
       var saveData = methods._loadData.apply($this);
 
       // スケジュールデータを削除
@@ -245,6 +251,19 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           $node.data('sc_key', $node.data('sc_key') - 1);
         } 
       });
+
+      // 選択中のscKeyを変更する
+      // （0<=key<=scKey-1 はそのまま。scKeyは削除。scKey+1<=key は前へ詰める）
+      config.scKeySelected = config.scKeySelected.filter(_scKey => _scKey != scKey);
+      config.scKeySelected = config.scKeySelected.map(function(_scKey) {
+        if (_scKey <= scKey - 1) {
+          return _scKey;
+        } else if (_scKey >= scKey + 1) {
+          return _scKey - 1;
+        } else {
+          console.error('意図しないscKey', scKey);
+        }
+      })
     },
 
     /**
@@ -543,21 +562,10 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           var $n = $(this);
           var scKey = $n.data('sc_key');
 
-          // 選択されているボックスのsc_keyを保持
-          if (!e.shiftKey) {  // シフトキーを押していなければ初期化
-            scKeySelected = [];
+          // ボックスを選択状態にする
+          if (setting.selectable) {
+            methods._selectWithScKey.apply($this, [scKey, e.shiftKey]);
           }
-          scKeySelected.push(scKey);
-
-          // 選択されているボックスのみボーダー色を変える
-          $this.find('.sc_bar').each(function(i, elem) {
-            var $node = $(elem);
-            if (scKeySelected.includes($node.data('sc_key'))) {
-              $node.css({'border': '3px solid rgba(139, 0, 0, 0.9)'});
-            } else {
-              $node.css({'border': '0px'});
-            }
-          });
 
           // コールバックがセットされていたら呼出
           if (setting.onClick) {
@@ -720,6 +728,36 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }
 
         return key;
+      });
+    },
+
+    /**
+     * scKeyを指定してボックスを選択状態にする
+     * @param {number} scKey 
+     * @param {boolean} append - 選択中のボックスを追加するか（true: 追加, false: 上書き）
+     */
+    _selectWithScKey: function _selectWithScKey(scKey, append) {
+      var $this = $(this);
+      var config = methods._loadSettingData.apply($this);
+
+      // 上書きモードなら選択中ボックスを初期化
+      if (!append) {
+        config.scKeySelected = [];
+      }
+
+      // 既に存在しているscKeyでなければ追加
+      if (!config.scKeySelected.includes(scKey)) {
+        config.scKeySelected.push(scKey);
+      }
+
+      // 選択されているボックスのみボーダー色を変える
+      $this.find('.sc_bar').each(function(i, elem) {
+        var $node = $(elem);
+        if (config.scKeySelected.includes($node.data('sc_key'))) {
+          $node.css({'border': '3px solid rgba(139, 0, 0, 0.9)'});
+        } else {
+          $node.css({'border': '0px'});
+        }
       });
     },
 
@@ -1322,6 +1360,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           draggable: true,
           resizable: true,
           resizableLeft: false,
+          selectable: true,
           // event
           onInitRow: null,
           onChange: null,
@@ -1369,6 +1408,11 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
           initRow2Schedule[row].push(i);
         }
         config.initRow2Schedule = initRow2Schedule;
+
+        // ガントチャートのボックスが選択可能な場合
+        if (config.selectable) {
+          config.scKeySelected = [];  // 選択中ボックス初期化
+        }
 
         // configデータを保存
         methods._saveSettingData.apply($this, [config]);
