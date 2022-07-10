@@ -215,7 +215,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
      * 選択しているボックスを削除する
      */
     removeSelectedSchedule: function removeSelectedSchedule() {
-      console.log($(this));
       var _scKeySelected = methods.getSelectedScKey.apply($(this));
       var $jq_sched = $(this);
       _scKeySelected.forEach(function(scKey) {
@@ -543,7 +542,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         $bar.on('mouseup', function (e) {
           var $n = $(this);
           var scKey = $n.data('sc_key');
-          console.log('click', scKey);
 
           // 選択されているボックスのsc_keyを保持
           if (!e.shiftKey) {  // シフトキーを押していなければ初期化
