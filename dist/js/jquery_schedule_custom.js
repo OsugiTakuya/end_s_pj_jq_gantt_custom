@@ -9,6 +9,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
   'use strict';
 
   var PLUGIN_NAME = 'jqSchedule';
+  var scKeySelected = [];
   var methods = {
     /**
      *
@@ -199,6 +200,51 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         methods._addScheduleData.apply($this, [timeline, d]);
 
         methods._resetBarPosition.apply($this, [timeline]);
+      });
+    },
+
+    /**
+     * 選択しているボックスのユニークID（scKey）を取得する
+     * @returns {Array}
+     */
+    getSelectedScKey: function getSelectedScKey() {
+      return scKeySelected;
+    },
+
+    /**
+     * 選択しているボックスを削除する
+     */
+    removeSelectedSchedule: function removeSelectedSchedule() {
+      console.log($(this));
+      var _scKeySelected = methods.getSelectedScKey.apply($(this));
+      var $jq_sched = $(this);
+      _scKeySelected.forEach(function(scKey) {
+        methods.removeSchedule.apply($jq_sched, [scKey]);
+      })
+    },
+
+    /**
+     * ボックスをID（scKey）で指定して削除する
+     * @param {Number} scKey - ボックスのユニークID
+     */
+    removeSchedule: function removeSchedule(scKey) {
+      var $this = $(this);
+      var saveData = methods._loadData.apply($this);
+
+      // スケジュールデータを削除
+      saveData.schedule.splice(scKey, 1);
+
+      // 要素を削除
+      $this.find('.sc_bar').each(function(i, elem) {
+        var $node = $(elem);
+        if ($node.data('sc_key') == scKey) {
+          $node.remove();
+        }
+        // 要素のsc_keyをスケジュールデータに合わせて変更する
+        //（0<=key<=scKey-1 はそのまま。scKey+1<=key は連番になるよう前へ詰める）
+        else if ($node.data('sc_key') > scKey) {
+          $node.data('sc_key', $node.data('sc_key') - 1);
+        } 
       });
     },
 
@@ -490,16 +536,34 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
         }
         
         // 全体で0始まりのボックスid（追加も対応できるようinitではなくここで設定）
-        // TODO: 削除の時どうする？
         var key = saveData.schedule.length - 1;
         $bar.data('sc_key', key);
 
-        $bar.on('mouseup', function () {
+        // クリックを離したときの処理
+        $bar.on('mouseup', function (e) {
+          var $n = $(this);
+          var scKey = $n.data('sc_key');
+          console.log('click', scKey);
+
+          // 選択されているボックスのsc_keyを保持
+          if (!e.shiftKey) {  // シフトキーを押していなければ初期化
+            scKeySelected = [];
+          }
+          scKeySelected.push(scKey);
+
+          // 選択されているボックスのみボーダー色を変える
+          $this.find('.sc_bar').each(function(i, elem) {
+            var $node = $(elem);
+            if (scKeySelected.includes($node.data('sc_key'))) {
+              $node.css({'border': '3px solid rgba(139, 0, 0, 0.9)'});
+            } else {
+              $node.css({'border': '0px'});
+            }
+          });
+
           // コールバックがセットされていたら呼出
           if (setting.onClick) {
             if ($(this).data('dragCheck') !== true && $(this).data('resizeCheck') !== true) {
-              var $n = $(this);
-              var scKey = $n.data('sc_key');
               setting.onClick.apply($this, [$n, saveData.schedule[scKey]]);
             }
           }
